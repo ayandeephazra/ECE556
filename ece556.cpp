@@ -31,7 +31,7 @@ int readBenchmark(const char *fileName, routingInst *rst)
     int phase = 1;
     int blockages;
 
-    if (scanf(buffer, "%s", token1) > 0 & phase == 1)
+    if (sscanf(buffer, "%s", token1) > 0 & phase == 1)
     {
 
       ///////////////////////////////////////////////////
@@ -40,13 +40,13 @@ int readBenchmark(const char *fileName, routingInst *rst)
       if (strcmp(token1, "grid") == 0)
       {
         char *x = (char *)malloc(sizeof(char));
-        if (scanf(buffer, "%s", x) > 0)
+        if (sscanf(buffer, "%s", x) > 0)
         {
           routingInst_->gx = atoi(x);
         }
         free(x);
         char *y = (char *)malloc(sizeof(char));
-        if (scanf(buffer, "%s", y) > 0)
+        if (sscanf(buffer, "%s", y) > 0)
         {
           routingInst_->gy = atoi(y);
         }
@@ -61,7 +61,7 @@ int readBenchmark(const char *fileName, routingInst *rst)
       else if (strcmp(token1, "capacity") == 0 & phase == 2)
       {
         char *capacity = (char *)malloc(sizeof(char));
-        if (scanf(buffer, "%s", capacity) > 0)
+        if (sscanf(buffer, "%s", capacity) > 0)
         {
           routingInst_->cap = atoi(capacity);
         }
@@ -74,10 +74,10 @@ int readBenchmark(const char *fileName, routingInst *rst)
       /////////////////////////////////////////////////
       else if (strcmp(token1, "num") == 0 & phase == 3)
       {
-        if (scanf(buffer, "%s", token2) > 0 & strcmp(token2, "nets") == 0)
+        if (sscanf(buffer, "%s", token2) > 0 & strcmp(token2, "nets") == 0)
         {
           char *numnets = (char *)malloc(sizeof(char));
-          if (scanf(buffer, "%s", numnets) > 0)
+          if (sscanf(buffer, "%s", numnets) > 0)
           {
             routingInst_->numNets = atoi(numnets);
           }
@@ -97,7 +97,7 @@ int readBenchmark(const char *fileName, routingInst *rst)
         for (int i = 0; i < routingInst_->numNets; i++)
         {
           routingInst_->nets[i].id = i;
-          if (scanf(buffer, "%s", token3) > 0 & scanf(buffer, "%s", token4) > 0)
+          if (sscanf(buffer, "%s", token3) > 0 & sscanf(buffer, "%s", token4) > 0)
           {
             routingInst_->nets[i].numPins = atoi(token4);
           }
@@ -108,7 +108,7 @@ int readBenchmark(const char *fileName, routingInst *rst)
           {
             fgets(buffer, 200 * sizeof(char), file);
 
-            if (scanf(buffer, "%s", token5) > 0 & scanf(buffer, "%s", token6) > 0)
+            if (sscanf(buffer, "%s", token5) > 0 & sscanf(buffer, "%s", token6) > 0)
             {
               routingInst_->nets[i].pins[j].x = atoi(token5);
               routingInst_->nets[i].pins[j].y = atoi(token6);
@@ -117,20 +117,20 @@ int readBenchmark(const char *fileName, routingInst *rst)
           // route malloc
           // will be assigned in solveRouting
 
-          ///////////////////////////////////////////////////
-          //   do the blockage parsing, just continue here
-          //   I assume that bad output is not a real scenario
-          //   so in that case, blockage statements follow nets' pins
-          //   parse the single integer line after the last nets' pins
-          //   use that in a for loop to cycle through the five integer per line
-          //   input of the blockages and add to rst aptly
-          /////////////////////////////////////////////////
+          ////////////////////////////////////////////////////////////////
+          //   Performs blockage parsing. Assuming that bad output      //
+          //   is not a real scenario and so in that case, blockage     //
+          //   statements parse the single integer in the following     //
+          //   line after the last nets' pins. Uses that in a for loop  //
+          //   to cycle through the five integer line input of the      //
+          //   blockages and add to rst instance aptly.                 //
+          ////////////////////////////////////////////////////////////////
         }
         phase = 5;
       }
       else
       {
-        if (scanf(buffer, "%s", token7) > 0)
+        if (sscanf(buffer, "%s", token7) > 0)
         {
           blockages = atoi(token7);
         }
@@ -140,23 +140,23 @@ int readBenchmark(const char *fileName, routingInst *rst)
           char tokena[100], tokenb[100], tokenc[100], tokend[100], tokene[100];
           int one, two, three, four, five;
 
-          if (scanf(buffer, "%s", tokena))
+          if (sscanf(buffer, "%s", tokena))
           {
             one = atoi(tokena);
           }
-          if (scanf(buffer, "%s", tokenb))
+          if (sscanf(buffer, "%s", tokenb))
           {
             two = atoi(tokenb);
           }
-          if (scanf(buffer, "%s", tokenc))
+          if (sscanf(buffer, "%s", tokenc))
           {
             three = atoi(tokenc);
           }
-          if (scanf(buffer, "%s", tokend))
+          if (sscanf(buffer, "%s", tokend))
           {
             four = atoi(tokend);
           }
-          if (scanf(buffer, "%s", tokene))
+          if (sscanf(buffer, "%s", tokene))
           {
             five = atoi(tokene);
           }
@@ -186,6 +186,10 @@ int writeOutput(const char *outRouteFile, routingInst *rst)
 int release(routingInst *rst)
 {
   /*********** TO BE FILLED BY YOU **********/
+  free(rst->edgeCaps);
+  free(rst->edgeUtils);
+
+  //free(rst->nets->nroute.segments)
 
   return 1;
 }
