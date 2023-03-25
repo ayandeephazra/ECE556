@@ -116,6 +116,7 @@ int readBenchmark(const char *fileName, routingInst *rst)
         //   use that in a for loop to cycle through the five integer per line
         //   input of the blockages and add to rst aptly
         /////////////////////////////////////////////////
+        
         }
       }
     }
