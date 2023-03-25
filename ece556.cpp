@@ -18,17 +18,20 @@ int readBenchmark(const char *fileName, routingInst *rst)
     exit(-1);
   }
 
-  char *buffer = (char *)malloc(100 * sizeof(char *)); // buffer can store 100 characters
+  char *buffer = (char *)malloc(200 * sizeof(char *)); // buffer can store 100 characters
   routingInst *routingInst_ = (routingInst *)malloc(sizeof(routingInst));
 
   // while loop to start parsing file
-  while (fgets(buffer, sizeof(routingInst_), file))
+  // assuming a line is no longer than 200 chars
+  while (fgets(buffer, 200 * sizeof(char), file))
   {
-
     // keyword, 1st number, 2nd number
     char token1[100], token2[100], token3[100], token4[100], token5[100], token6[100], token7[100];
+    // data variables
+    int phase = 1;
+    int blockages;
 
-    if (scanf(buffer, "%s", token1) > 0)
+    if (scanf(buffer, "%s", token1) > 0 & phase == 1)
     {
 
       ///////////////////////////////////////////////////
@@ -48,12 +51,14 @@ int readBenchmark(const char *fileName, routingInst *rst)
           routingInst_->gy = atoi(y);
         }
         free(y);
+
+        phase = 2;
       }
 
       ///////////////////////////////////////////////////
       //   capacity parsing                           //
       /////////////////////////////////////////////////
-      else if (strcmp(token1, "capacity") == 0)
+      else if (strcmp(token1, "capacity") == 0 & phase == 2)
       {
         char *capacity = (char *)malloc(sizeof(char));
         if (scanf(buffer, "%s", capacity) > 0)
@@ -61,12 +66,13 @@ int readBenchmark(const char *fileName, routingInst *rst)
           routingInst_->cap = atoi(capacity);
         }
         free(capacity);
+        phase = 3;
       }
 
       ///////////////////////////////////////////////////
       //   nets parsing                               //
       /////////////////////////////////////////////////
-      else if (strcmp(token1, "num") == 0)
+      else if (strcmp(token1, "num") == 0 & phase == 3)
       {
         if (scanf(buffer, "%s", token2) > 0 & strcmp(token2, "nets") == 0)
         {
@@ -77,16 +83,17 @@ int readBenchmark(const char *fileName, routingInst *rst)
           }
           free(numnets);
         }
+
+        // instantiate nets filed in rst
+        routingInst_->nets = (net *)malloc(routingInst_->numNets * sizeof(net));
+        phase = 4;
       }
+
       ///////////////////////////////////////////////////
       //   initialization of nets struct within rst   //
-      //   or bad input handling because its nums    //
-      ////////////////////////////////////////////////
-      else
+      /////////////////////////////////////////////////
+      else if (phase == 4)
       {
-
-        routingInst_->nets = (net *)malloc(routingInst_->numNets * sizeof(net));
-
         for (int i = 0; i < routingInst_->numNets; i++)
         {
           routingInst_->nets[i].id = i;
@@ -99,6 +106,8 @@ int readBenchmark(const char *fileName, routingInst *rst)
 
           for (int j = 0; j < routingInst_->nets[i].numPins; j++)
           {
+            fgets(buffer, 200 * sizeof(char), file);
+
             if (scanf(buffer, "%s", token5) > 0 & scanf(buffer, "%s", token6) > 0)
             {
               routingInst_->nets[i].pins[j].x = atoi(token5);
@@ -106,17 +115,51 @@ int readBenchmark(const char *fileName, routingInst *rst)
             }
           }
           // route malloc
-          // not sure, idk when the route is ready to be loaded
+          // will be assigned in solveRouting
 
-        ///////////////////////////////////////////////////
-        //   do the blockage parsing, jsut continue here
-        //   I assume that bad output is not a real scenario
-        //   so in that case, blockage statements follow nets' pins   
-        //   parse the single integer line after the last nets' pins
-        //   use that in a for loop to cycle through the five integer per line
-        //   input of the blockages and add to rst aptly
-        /////////////////////////////////////////////////
-        
+          ///////////////////////////////////////////////////
+          //   do the blockage parsing, just continue here
+          //   I assume that bad output is not a real scenario
+          //   so in that case, blockage statements follow nets' pins
+          //   parse the single integer line after the last nets' pins
+          //   use that in a for loop to cycle through the five integer per line
+          //   input of the blockages and add to rst aptly
+          /////////////////////////////////////////////////
+        }
+        phase = 5;
+      }
+      else
+      {
+        if (scanf(buffer, "%s", token7) > 0)
+        {
+          blockages = atoi(token7);
+        }
+        for (int k = 0; k < blockages; k++)
+        {
+          fgets(buffer, 200 * sizeof(char), file);
+          char tokena[100], tokenb[100], tokenc[100], tokend[100], tokene[100];
+          int one, two, three, four, five;
+
+          if (scanf(buffer, "%s", tokena))
+          {
+            one = atoi(tokena);
+          }
+          if (scanf(buffer, "%s", tokenb))
+          {
+            two = atoi(tokenb);
+          }
+          if (scanf(buffer, "%s", tokenc))
+          {
+            three = atoi(tokenc);
+          }
+          if (scanf(buffer, "%s", tokend))
+          {
+            four = atoi(tokend);
+          }
+          if (scanf(buffer, "%s", tokene))
+          {
+            five = atoi(tokene);
+          }
         }
       }
     }
