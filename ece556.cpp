@@ -188,14 +188,32 @@ int writeOutput(const char *outRouteFile, routingInst *rst)
   }
   for (int i = 0; i < rst->numNets; i++)
   {
-    fprintf(file, "%s%s\n", "n", i);
-    for (int j = 0; j<rst->nets[i].nroute.numSegs; j++){
+    fprintf(file, "%s%d\n", "n", i);
+    for (int j = 0; j < rst->nets[i].nroute.numSegs; j++)
+    {
       int x1 = rst->nets[i].nroute.segments->p1.x;
       int y1 = rst->nets[i].nroute.segments->p1.y;
       int x2 = rst->nets[i].nroute.segments->p2.x;
       int y2 = rst->nets[i].nroute.segments->p2.y;
-      fprintf(file, "(%s,%s)-(%s,%s)\n", x1, y1, x2, y2);
+
+      // if the points have some sort of a diagonal relation
+      // meaning they aren't on the same x or y axis
+      if ((rst->nets[i].nroute.segments->p1.x != rst->nets[i].nroute.segments->p2.x) &
+          (rst->nets[i].nroute.segments->p1.y != rst->nets[i].nroute.segments->p2.y))
+      {
+        ///////////////////////////////////////////////////////////
+        //  We opted to connect x1,y1 and x2,y2 through x1,y2   //
+        /////////////////////////////////////////////////////////
+        fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y1, x1, y2);
+        fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y2, x2, y2);
+      }
+      // if there is a horizontal or vertical relation between the points
+      else
+      {
+        fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y1, x2, y2);
+      }
     }
+    fprintf(file, "%s\n", "!");
   }
 
   fclose(file);
