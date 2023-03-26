@@ -172,8 +172,101 @@ int readBenchmark(const char *fileName, routingInst *rst)
 int solveRouting(routingInst *rst)
 {
   /*********** TO BE FILLED BY YOU **********/
+ int edge_itr=0; 
+ int x; 
+ int y;
+ int net_itr = 0;
+ int seg_itr = 0;
+ int pin_num = 0; 
+ point p1,p2;
 
-  return 1;
+ for(net_itr=0; net_itr < rst->numNets; net_itr++)
+	{
+    /* Number of segments = Number of pins - 1 */
+	rst->nets[net_itr].nroute.numSegs=rst->nets[net_itr].numPins - 1; 
+  printf("For net%d, number of pins %d, number of segments %d",net_itr,rst->nets[net_itr].numPins,rst->nets[net_itr].nroute.numSegs);	
+
+	rst->nets[net_itr].nroute.segments = (segment*)malloc(rst->nets[net_itr].nroute.numSegs*sizeof(segment));
+    if(rst->nets[net_itr].nroute.segments == NULL)
+    {
+      fprintf(stderr, "Error while allocating memory space for segments\n");
+      return 0;
+    }
+
+/* Marking start-end pins and it's segments for 
+
+|                     --------                                  |
+|                     |                                         |
+|                     |                                         |
+|________      or     |              OR   ________________  OR  |         */
+
+		for(seg_itr=0;seg_itr < rst->nets[net_itr].nroute.numSegs ; seg_itr++)
+			{ 
+	
+			p1.x=rst->nets[net_itr].pins[pin_num].x;  /* x coordinate of start point p1( >=0 in the routing grid)*/
+			p1.y=rst->nets[net_itr].pins[pin_num++].y;  /* y coordinate of end point p1  ( >=0 in the routing grid)*/
+      
+			p2.x=rst->nets[net_itr].pins[pin_num].x;  /* x coordinate of start point p2( >=0 in the routing grid)*/
+			p2.y=rst->nets[net_itr].pins[pin_num].y;  /* y coordinate of end point p2  ( >=0 in the routing grid)*/
+
+      printf("In Net #%d, P1 and P2 are (%d,%d) & (%d,%d)\n",net_itr, p1.x,p1.y,p2.x,p2.y)
+			rst->nets[net_itr].nroute.segments[seg_itr].p1 = p1; /* start point of current segment */
+			rst->nets[net_itr].nroute.segments[seg_itr].p2 = p2; /* end point of current segment */
+
+			printf("This is Segment #%d\n",seg_itr);
+			rst->nets[net_itr].nroute.segments[seg_itr].numEdges= NumEdges(p1.x,p2.x,p1.y,p2.y);
+			
+			rst->nets[net_itr].nroute.segments[seg_itr].edges= (int*)malloc(rst->nets[net_itr].nroute.segments[seg_itr].numEdges*sizeof(int));
+      if( rst->nets[net_itr].nroute.segments[seg_itr].edges == NULL)
+      {
+        fprintf(stderr, "Error while alocating memory space for edges array\n");
+        return 0;
+      }
+        int x_coord, y_coord;
+        int x_diff, y_diff;
+        int itr;
+
+        x_diff = p2.x - p1.x;
+        y_diff = p2.y - p1.y;
+
+        if(p1.x > p2.x)
+      {
+        /*Routing Horizontally*/
+        y_coord = rst->nets[net_itr].pins[seg_itr].y_coord;
+        for(itr = 0; itr < -x_diff; itr++)
+       {
+        rst->nets[net_itr].nroute.segments[seg_itr].edges[itr+abs(y_diff)] = (rst->nets[net_itr].pins[seg_itr].x - itr) + y_coord*(rst->gx-1);
+       }
+       /*Routing Vertically*/
+       x_coord = rst->nets[net_itr].pins[seg_itr].x_coord + dx;
+        for(itr = 0; itr < -y_diff; itr++)
+       {
+        rst->nets[net_itr].nroute.segments[seg_itr].edges[itr+abs(x_diff)] =  (rst->nets[net_itr].pins[seg_itr].y - itr) + (rst->gx - 1)*(rst->gy) + x_coord*(rst->gy - 1);
+       }
+      }
+       else
+      {
+        /*Routing Vertically*/
+        x_coord = rst->nets[net_itr].pins[seg_itr].x_coord
+      for(itr = 0; itr < y_diff; itr++)
+      {
+        rst->nets[net_itr].nroute.segments[seg_itr].edges[itr+abs(x_diff)] = (rst->nets[i].pins[j].y + itr+1) + (rst->gx - 1)*(rst->gy) + x_coord*(rst->gy - 1);
+      }
+      /*Routing Horizontally*/
+       y_coord = rst->nets[net_itr].pins[seg_itr].y_coord + dy;
+       for(itr = 0; itr < x_diff; itr++)
+     {
+      rst->nets[net_itr].nroute.segments[seg_itr].edges[itr+abs(y_diff)] = (rst->nets[net_itr].pins[seg_itr].x + itr+1) + y_coord*(rst->gx-1);
+     } 
+      }
+       
+			
+			}
+			
+	}
+	
+
+	return 1;
 }
 
 int writeOutput(const char *outRouteFile, routingInst *rst)
