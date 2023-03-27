@@ -10,7 +10,7 @@ int readBenchmark(const char *fileName, routingInst *rst)
   /*********** TO BE FILLED BY YOU **********/
 
   int num_blockages;
-  char tokena[100], tokenb[100], tokenc[100], tokend[100], tokene[100];
+
   char token1[100], token2[100], token3[100], token4[100], token5[100], token6[100], token7[100];
   int one, two, three, four, five;
 
@@ -21,40 +21,33 @@ int readBenchmark(const char *fileName, routingInst *rst)
     return 0;
   }
 
-  char *buffer = (char *)malloc(200 * sizeof(char *)); // buffer can store 200 characters
+  char buffer[200]; //= (char*)malloc(200 * sizeof(char *)); // buffer can store 200 characters
   // rst = (routingInst *)malloc(sizeof(routingInst));
 
   // while loop to start parsing file
   // assuming a line is no longer than 200 chars
-  int t = 0;
   int phase = 1;
 
   while (fgets(buffer, 200 * sizeof(char), file))
   {
     // keyword, 1st number, 2nd number
-
     // data variables
 
     if ((sscanf(buffer, "%s", token1) > 0))
     {
-
-      if (t == 0 | t == 1)
-      {
-        // printf("%s", token1);
-        // t++;
-      }
-
       ///////////////////////////////////////////////////
       //   grid parsing                               //
       /////////////////////////////////////////////////
       if ((phase == 1) & strcmp(token1, "grid") == 0)
       {
-        // printf("%s", token1);
+
         char x_[100], y_[100];
         if (sscanf(buffer, "%s %s %s\n", token1, x_, y_) > 0)
         {
           rst->gx = atoi(x_);
           rst->gy = atoi(y_);
+          // num of edges = x*(y-1) + y*(x-1)
+          rst->numEdges = rst->gx * (rst->gy - 1) + rst->gy * (rst->gx - 1);
         }
         phase = 2;
         continue;
@@ -84,89 +77,130 @@ int readBenchmark(const char *fileName, routingInst *rst)
           rst->numNets = atoi(nnets);
         }
 
-        // instantiate nets filed in rst
-        rst->nets = (net *)malloc(rst->numNets * sizeof(net));
         phase = 4;
-        continue;
+        break;
       }
     }
   }
+
+  // instantiate nets filed in rst
+  rst->nets = (net *)malloc(rst->numNets * sizeof(net));
 
   ///////////////////////////////////////////////////
   //   initialization of nets struct within rst   //
   /////////////////////////////////////////////////
-  if (phase == 4)
+  for (int net_indx = 0; net_indx < rst->numNets; net_indx++)
   {
-    for (int i = 0; i < rst->numNets; i++)
+    fgets(buffer, 200 * sizeof(char), file);
+    char temp1[100], temp2[100];
+
+    rst->nets[net_indx].id = net_indx;
+    if ((sscanf(buffer, "%s %s\n", temp1, temp2) > 0))
     {
-      rst->nets[i].id = i;
-      if ((sscanf(buffer, "%s %s\n", token3, token4) > 0))
-      {
-        // printf("%s", token4);
-        rst->nets[i].numPins = atoi(token4);
-      }
-      // declaring the points/pins in each net
-      rst->nets[i].pins = (point *)malloc(rst->nets[i].numPins * sizeof(point));
-
-      for (int j = 0; j < rst->nets[i].numPins; j++)
-      {
-        // printf("this%d", j);
-        fgets(buffer, 200 * sizeof(char), file);
-        printf(buffer);
-
-        if (sscanf(buffer, "%s %s\n", token5, token6) > 0)
-        {
-          rst->nets[i].pins[j].x = atoi(token5);
-          rst->nets[i].pins[j].y = atoi(token6);
-        }
-      }
-      // route malloc
-      // will be assigned in solveRouting
-
-      ////////////////////////////////////////////////////////////////
-      //   Performs blockage parsing. Assuming that bad output      //
-      //   is not a real scenario and so in that case, blockage     //
-      //   statements parse the single integer in the following     //
-      //   line after the last nets' pins. Uses that in a for loop  //
-      //   to cycle through the five integer line input of the      //
-      //   blockages and add to rst instance aptly.                 //
-      ////////////////////////////////////////////////////////////////
+      rst->nets[net_indx].numPins = atoi(temp2);
     }
-    phase = 5;
-  }
-  else
-  {
-    if (sscanf(buffer, "%s", token7) > 0)
+    // allocate mem for pins
+    rst->nets[net_indx].pins = (point *)malloc(rst->nets[net_indx].numPins * sizeof(point));
+    for (int pin_indx = 0; pin_indx < rst->nets[net_indx].numPins; pin_indx++)
     {
-      num_blockages = atoi(token7);
+      fgets(buffer, 200 * sizeof(char), file);
+      char temp3[100], temp4[100];
 
-      for (int k = 0; k < num_blockages; k++)
+      if (sscanf(buffer, "%s %s\n", temp3, temp4) > 0)
       {
-        fgets(buffer, 200 * sizeof(char), file);
-
-        if (sscanf(buffer, "%s", tokena) > 0)
-        {
-          one = atoi(tokena);
-        }
-        if (sscanf(buffer, "%s", tokenb) > 0)
-        {
-          two = atoi(tokenb);
-        }
-        if (sscanf(buffer, "%s", tokenc) > 0)
-        {
-          three = atoi(tokenc);
-        }
-        if (sscanf(buffer, "%s", tokend) > 0)
-        {
-          four = atoi(tokend);
-        }
-        if (sscanf(buffer, "%s", tokene) > 0)
-        {
-          five = atoi(tokene);
-        }
+        rst->nets[net_indx].pins[pin_indx].x = atoi(temp3);
+        rst->nets[net_indx].pins[pin_indx].y = atoi(temp4);
       }
     }
   }
+  ////////////////////////////////////////////////////////////////
+  //   Performs blockage parsing. Assuming that bad output      //
+  //   is not a real scenario and so in that case, blockage     //
+  //   statements parse the single integer in the following     //
+  //   line after the last nets' pins. Uses that in a for loop  //
+  //   to cycle through the five integer line input of the      //
+  //   blockages and add to rst instance aptly.                 //
+  ////////////////////////////////////////////////////////////////
+  char temp5[100];
+  fgets(buffer, 200 * sizeof(char), file);
+  if (sscanf(buffer, "%s\n", temp5) > 0)
+  {
+    num_blockages = atoi(temp5);
+  }
+  typedef struct
+  {
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+    int newcap;
+  } blockage;
+
+  blockage *blockage_ = (blockage *)malloc(num_blockages * sizeof(blockage));
+
+  rst->edgeCaps = (int *)malloc(rst->numEdges * sizeof(int *));
+  rst->edgeUtils = (int *)malloc(rst->numEdges * sizeof(int *));
+  rst->cap = 1; // change as instructed
+
+  for (int blockage_indx = 0; blockage_indx < num_blockages; blockage_indx++)
+  {
+    fgets(buffer, 200 * sizeof(char), file);
+
+    char x1[100], x2[100], y1[100], y2[100], newcap[100];
+
+    if (sscanf(buffer, "%s %s %s %s %s\n", x1, y1, x2, y2, newcap) > 0)
+    {
+      blockage_[blockage_indx].x1 = atoi(x1);
+      blockage_[blockage_indx].y1 = atoi(y1);
+      blockage_[blockage_indx].x2 = atoi(x2);
+      blockage_[blockage_indx].y2 = atoi(y2);
+      blockage_[blockage_indx].newcap = atoi(newcap);
+      // printf("%d %d %d %d %d ", blockage_[blockage_indx].x1, blockage_[blockage_indx].y1, blockage_[blockage_indx].x2, blockage_[blockage_indx].y2, blockage_[blockage_indx].newcap);
+    }
+  }
+  // default capacity initialization
+  for (int edge_indx = 0; edge_indx < rst->numEdges; edge_indx++)
+  {
+    rst->edgeCaps[edge_indx] = rst->cap;
+  }
+
+  // calculated blockage edgeCap and edgeUtils
+  for (int recalc_indx = 0; recalc_indx < num_blockages; recalc_indx++)
+  {
+    if (blockage_[recalc_indx].x1 == blockage_[recalc_indx].x2)
+    {
+      if (blockage_[recalc_indx].y1 != blockage_[recalc_indx].y2)
+      {
+        if (blockage_[recalc_indx].y1 < blockage_[recalc_indx].y2)
+        {
+          rst->edgeCaps[(rst->gy * (rst->gx - 1)) + blockage_[recalc_indx].x1 +
+                        (rst->gx * blockage_[recalc_indx].y1)] = blockage_[recalc_indx].newcap;
+        }
+        else
+        {
+          rst->edgeCaps[(rst->gy * (rst->gx - 1)) + blockage_[recalc_indx].x2 +
+                        (rst->gx * blockage_[recalc_indx].y2)] = blockage_[recalc_indx].newcap;
+        }
+      }
+    }
+    else
+    {
+      if (blockage_[recalc_indx].x1 < blockage_[recalc_indx].x2)
+      {
+        rst->edgeCaps[(blockage_[recalc_indx].y1 * (rst->gx - 1)) +
+                      blockage_[recalc_indx].x1] = blockage_[recalc_indx].newcap;
+      }
+      else
+      {
+        rst->edgeCaps[(blockage_[recalc_indx].y2 * (rst->gx - 1)) +
+                      blockage_[recalc_indx].x2] = blockage_[recalc_indx].newcap;
+      }
+    }
+  }
+  /*
+    for(int i = 0; i<rst->numEdges; i++){
+      printf(" %d,%d ", rst->edgeCaps[i], rst->edgeUtils[i]);
+    }*/
 
   fclose(file);
   return 1;
@@ -286,7 +320,7 @@ int writeOutput(const char *outRouteFile, routingInst *rst)
     perror("Error opening file");
     return 0;
   }
-  fprintf(file, "%d", rst->numNets);
+  fprintf(file, "%d", rst->numNets + 1);
   for (int i = 0; i < rst->numNets; i++)
   {
     fprintf(file, "%s%d\n", "n", i);
