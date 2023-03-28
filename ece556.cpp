@@ -205,11 +205,12 @@ int readBenchmark(const char *fileName, routingInst *rst)
     for(int i = 0; i<rst->numEdges; i++){
       printf(" %d,%d ", rst->edgeCaps[i], rst->edgeUtils[i]);
     }*/
-  printf("%ld\n",sizeof(buffer));
+  printf("%ld\n", sizeof(buffer));
   fclose(file);
   return 1;
 }
 
+/* number of edges in the segment*/
 int NumEdges(int p1_x, int p1_y, int p2_x, int p2_y)
 {
   int num_edges = abs(p1_x - p2_x) + abs(p1_y - p2_y);
@@ -221,13 +222,11 @@ int solveRouting(routingInst *rst)
 {
   /*********** TO BE FILLED BY YOU **********/
 
-  int x;
-  int y;
-  int net_itr = 0;
-  int seg_itr = 0;
+  int x, y;
   point p1, p2;
+  int x_diff_abs, y_diff_abs;
 
-  for (net_itr = 0; net_itr < rst->numNets; net_itr++)
+  for (auto net_itr = 0; net_itr != rst->numNets; net_itr++)
   {
     /* Number of segments = Number of pins - 1 */
     rst->nets[net_itr].nroute.numSegs = rst->nets[net_itr].numPins - 1;
@@ -240,58 +239,75 @@ int solveRouting(routingInst *rst)
     |                     --------                                   |
     |                     |                                          |
     |                     |                                          |
-    |________      or     |            OR     _________    OR        |      
-    
+    |________      or     |            OR     _________    OR        |
+
     */
+
     int pin_num = 0;
-    for (seg_itr = 0; seg_itr < rst->nets[net_itr].nroute.numSegs; seg_itr++)
+    for (auto seg_itr = 0; seg_itr != rst->nets[net_itr].nroute.numSegs; seg_itr++)
     {
 
       p1.x = rst->nets[net_itr].pins[pin_num].x;   /* x coordinate of start point p1( >=0 in the routing grid)*/
-      p1.y = rst->nets[net_itr].pins[pin_num].y; /* y coordinate of end point p1  ( >=0 in the routing grid)*/
-      pin_num++;
-      p2.x = rst->nets[net_itr].pins[pin_num].x; /* x coordinate of start point p2( >=0 in the routing grid)*/
-      p2.y = rst->nets[net_itr].pins[pin_num].y; /* y coordinate of end point p2  ( >=0 in the routing grid)*/
+      p1.y = rst->nets[net_itr].pins[pin_num++].y; /* y coordinate of end point p1  ( >=0 in the routing grid)*/
+      p2.x = rst->nets[net_itr].pins[pin_num].x;   /* x coordinate of start point p2( >=0 in the routing grid)*/
+      p2.y = rst->nets[net_itr].pins[pin_num].y;   /* y coordinate of end point p2  ( >=0 in the routing grid)*/
 
       rst->nets[net_itr].nroute.segments[seg_itr].p1 = p1; /* start point of current segment */
       rst->nets[net_itr].nroute.segments[seg_itr].p2 = p2; /* end point of current segment */
 
-      rst->nets[net_itr].nroute.segments[seg_itr].numEdges = NumEdges(p1.x, p2.x, p1.y, p2.y);
+      rst->nets[net_itr].nroute.segments[seg_itr].numEdges = NumEdges(p1.x, p2.x, p1.y, p2.y); /* number of edges in the segment*/
 
-      rst->nets[net_itr].nroute.segments[seg_itr].edges=new int [abs(p1.x - p2.x) + abs(p1.y - p2.y)];
+      rst->nets[net_itr].nroute.segments[seg_itr].edges = new int[abs(p1.x - p2.x) + abs(p1.y - p2.y)]; /* array of edges representing the segment*/
 
-      int x_diff, y_diff;
-      int itr;
+      /*
+      P2 is above P1 and P2 is to the right of P1
+      */
+      int x_diff = p2.x - p1.x;
+      int y_diff = p2.y - p1.y;
 
-      x_diff = p2.x - p1.x;
-      y_diff = p2.y - p1.y;
+      /*
+      P2 is below P1 and P2 is to the left of P1
+      */
+      if (p1.x > p2.x)
+      {
+        x_diff_abs = abs(x_diff);
+        y_diff_abs = abs(y_diff);
+      }
 
       if (p1.x > p2.x)
       {
-        /*Routing Horizontally*/
+        /*
+         Routing Horizontally towards left side
+        */
         y = rst->nets[net_itr].pins[seg_itr].y;
-        for (itr = 0; itr < -x_diff; itr++)
+        for (auto itr = 0; itr != x_diff_abs; itr++)
         {
           rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(y_diff)] = (rst->nets[net_itr].pins[seg_itr].x - itr) + y * (rst->gx - 1);
         }
-        /*Routing Vertically*/
+        /*
+        Routing Vertically downwards
+        */
         x = rst->nets[net_itr].pins[seg_itr].x + x_diff;
-        for (itr = 0; itr < -y_diff; itr++)
+        for (auto itr = 0; itr != y_diff_abs; itr++)
         {
           rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(x_diff)] = (rst->nets[net_itr].pins[seg_itr].y - itr) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
         }
       }
       else
       {
-        /*Routing Vertically*/
+        /*
+        Routing Vertically upwards
+        */
         x = rst->nets[net_itr].pins[seg_itr].x;
-        for (itr = 0; itr < y_diff; itr++)
+        for (auto itr = 0; itr != abs(y_diff); itr++)
         {
           rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(x_diff)] = (rst->nets[net_itr].pins[seg_itr].y + itr + 1) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
         }
-        /*Routing Horizontally*/
+        /*
+         Routing Horizontally towards right side
+        */
         y = rst->nets[net_itr].pins[seg_itr].y + y_diff;
-        for (itr = 0; itr < x_diff; itr++)
+        for (auto itr = 0; itr != abs(x_diff); itr++)
         {
           rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(y_diff)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
         }
@@ -306,82 +322,87 @@ int writeOutput(const char *outRouteFile, routingInst *rst)
 {
   /*********** TO BE FILLED BY YOU **********/
 
- /* FILE *file;
-  if (!(file = fopen(outRouteFile, "w")))
+  /* FILE *file;
+   if (!(file = fopen(outRouteFile, "w")))
+   {
+     perror("Error opening file");
+     return 0;
+   }
+   //fprintf(file, "%d", rst->numNets + 1);
+   for (int i = 0; i < rst->numNets; i++)
+   {
+     fprintf(file, "%s%d\n", "n", i);
+     for (int j = 0; j < rst->nets[i].nroute.numSegs; j++)
+     {
+       int x1 = rst->nets[i].nroute.segments->p1.x;
+       int y1 = rst->nets[i].nroute.segments->p1.y;
+       int x2 = rst->nets[i].nroute.segments->p2.x;
+       int y2 = rst->nets[i].nroute.segments->p2.y;
+
+       // if the points have some sort of a diagonal relation
+       // meaning they aren't on the same x or y axis
+       if ((rst->nets[i].nroute.segments->p1.x != rst->nets[i].nroute.segments->p2.x) &
+           (rst->nets[i].nroute.segments->p1.y != rst->nets[i].nroute.segments->p2.y))
+       {
+         ///////////////////////////////////////////////////////////
+         //  We opted to connect x1,y1 and x2,y2 through x1,y2   //
+         /////////////////////////////////////////////////////////
+         fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y1, x1, y2);
+         fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y2, x2, y2);
+       }
+       // if there is a horizontal or vertical relation between the points
+       else
+       {
+         fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y1, x2, y2);
+       }
+     }
+     fprintf(file, "%s\n", "!");
+   }
+
+   fclose(file);
+   return 1;
+   */
+  int i, j;
+  ofstream out_stream(outRouteFile);
+  if (!out_stream)
   {
-    perror("Error opening file");
+    cout << "Unable to open the file" << endl;
+    out_stream.close();
     return 0;
   }
-  //fprintf(file, "%d", rst->numNets + 1);
-  for (int i = 0; i < rst->numNets; i++)
+  for (i = 0; i < rst->numNets; i++)
   {
-    fprintf(file, "%s%d\n", "n", i);
-    for (int j = 0; j < rst->nets[i].nroute.numSegs; j++)
-    {
-      int x1 = rst->nets[i].nroute.segments->p1.x;
-      int y1 = rst->nets[i].nroute.segments->p1.y;
-      int x2 = rst->nets[i].nroute.segments->p2.x;
-      int y2 = rst->nets[i].nroute.segments->p2.y;
+    out_stream << "n" << rst->nets[i].id << endl;
 
-      // if the points have some sort of a diagonal relation
-      // meaning they aren't on the same x or y axis
-      if ((rst->nets[i].nroute.segments->p1.x != rst->nets[i].nroute.segments->p2.x) &
-          (rst->nets[i].nroute.segments->p1.y != rst->nets[i].nroute.segments->p2.y))
+    for (j = 0; j < rst->nets[i].nroute.numSegs; j++)
+    {
+      // if (rst->nets[])
+      segment seg = rst->nets[i].nroute.segments[j];
+
+      if (seg.p1.x == seg.p2.x || seg.p1.y == seg.p2.y)
       {
-        ///////////////////////////////////////////////////////////
-        //  We opted to connect x1,y1 and x2,y2 through x1,y2   //
-        /////////////////////////////////////////////////////////
-        fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y1, x1, y2);
-        fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y2, x2, y2);
+        out_stream << "(" << seg.p1.x << "," << seg.p1.y << ")-";
+        out_stream << "(" << seg.p2.x << "," << seg.p2.y << ")" << endl;
       }
-      // if there is a horizontal or vertical relation between the points
+
       else
       {
-        fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y1, x2, y2);
+        out_stream << "(" << seg.p1.x << "," << seg.p1.y << ")-";
+        out_stream << "(" << seg.p2.x << "," << seg.p1.y << ")" << endl;
+        out_stream << "(" << seg.p2.x << "," << seg.p1.y << ")-";
+        out_stream << "(" << seg.p2.x << "," << seg.p2.y << ")" << endl;
       }
+      /*
+            out_stream << "(" << seg.p1.x << "," << seg.p1.y << ")-";
+            out_stream << "(" << seg.p2.x << "," << seg.p2.y << ")" << endl;
+      */
     }
-    fprintf(file, "%s\n", "!");
+    out_stream << "!" << endl;
   }
 
-  fclose(file);
+  out_stream.close();
+
   return 1;
-  */
-  int i,j;  
-ofstream out_stream(outRouteFile);
-	if (!out_stream){
-		cout << "Unable to open the file" << endl;
-		out_stream.close();
-		return 0;
-	}
-	for ( i = 0; i < rst->numNets; i++){
-		out_stream << "n" << rst->nets[i].id << endl;
-                 
-		for ( j = 0; j < rst->nets[i].nroute.numSegs; j++){
-			//if (rst->nets[])
-			segment seg = rst->nets[i].nroute.segments[j];
-			
-			if (seg.p1.x == seg.p2.x || seg.p1.y == seg.p2.y) {
-			out_stream << "(" << seg.p1.x << "," << seg.p1.y << ")-";
-			out_stream << "(" << seg.p2.x << "," << seg.p2.y << ")" << endl;
-			}
-			
-			else {
-			out_stream << "(" << seg.p1.x << "," << seg.p1.y << ")-";
-			out_stream << "(" << seg.p2.x << "," << seg.p1.y << ")" << endl;
-			out_stream << "(" << seg.p2.x << "," << seg.p1.y << ")-" ;
-			out_stream << "(" << seg.p2.x << "," << seg.p2.y << ")" << endl;
-			}
-/*
-			out_stream << "(" << seg.p1.x << "," << seg.p1.y << ")-";
-			out_stream << "(" << seg.p2.x << "," << seg.p2.y << ")" << endl;
-*/
-		}
-		out_stream << "!" << endl;
-	}
-
-	out_stream.close();
-
-	return 1;
 }
 
 int release(routingInst *rst)
