@@ -273,7 +273,14 @@ int solveRouting(routingInst *rst)
         x_diff_abs = abs(x_diff);
         y_diff_abs = abs(y_diff);
       }
-
+      /*
+      For numbering the edge ids, we first number the horizontal edges from left to right starting from the bottom most one. We then number the vertical edges starting from the left most one then moving up.
+        ____e5_______e6__
+      e8|     e10|       |e12
+        |___e3___|___e4__|
+      e7|      e9|       |e11
+        |___e1___|___e2__|
+      */
       if (p1.x > p2.x)
       {
         /*
