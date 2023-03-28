@@ -306,7 +306,7 @@ int writeOutput(const char *outRouteFile, routingInst *rst)
 {
   /*********** TO BE FILLED BY YOU **********/
 
- /* FILE *file;
+  FILE *file;
   if (!(file = fopen(outRouteFile, "w")))
   {
     perror("Error opening file");
@@ -318,21 +318,21 @@ int writeOutput(const char *outRouteFile, routingInst *rst)
     fprintf(file, "%s%d\n", "n", i);
     for (int j = 0; j < rst->nets[i].nroute.numSegs; j++)
     {
-      int x1 = rst->nets[i].nroute.segments->p1.x;
-      int y1 = rst->nets[i].nroute.segments->p1.y;
-      int x2 = rst->nets[i].nroute.segments->p2.x;
-      int y2 = rst->nets[i].nroute.segments->p2.y;
+      int x1 = rst->nets[i].nroute.segments[j].p1.x;
+      int y1 = rst->nets[i].nroute.segments[j].p1.y;
+      int x2 = rst->nets[i].nroute.segments[j].p2.x;
+      int y2 = rst->nets[i].nroute.segments[j].p2.y;
 
       // if the points have some sort of a diagonal relation
       // meaning they aren't on the same x or y axis
-      if ((rst->nets[i].nroute.segments->p1.x != rst->nets[i].nroute.segments->p2.x) &
-          (rst->nets[i].nroute.segments->p1.y != rst->nets[i].nroute.segments->p2.y))
+      if ((rst->nets[i].nroute.segments[j].p1.x != rst->nets[i].nroute.segments[j].p2.x) &
+          (rst->nets[i].nroute.segments[j].p1.y != rst->nets[i].nroute.segments[j].p2.y))
       {
         ///////////////////////////////////////////////////////////
         //  We opted to connect x1,y1 and x2,y2 through x1,y2   //
         /////////////////////////////////////////////////////////
-        fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y1, x1, y2);
-        fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y2, x2, y2);
+        fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y1, x2, y1);
+        fprintf(file, "(%d,%d)-(%d,%d)\n", x2, y1, x2, y2);
       }
       // if there is a horizontal or vertical relation between the points
       else
@@ -345,43 +345,7 @@ int writeOutput(const char *outRouteFile, routingInst *rst)
 
   fclose(file);
   return 1;
-  */
-  int i,j;  
-ofstream out_stream(outRouteFile);
-	if (!out_stream){
-		cout << "Unable to open the file" << endl;
-		out_stream.close();
-		return 0;
-	}
-	for ( i = 0; i < rst->numNets; i++){
-		out_stream << "n" << rst->nets[i].id << endl;
-                 
-		for ( j = 0; j < rst->nets[i].nroute.numSegs; j++){
-			//if (rst->nets[])
-			segment seg = rst->nets[i].nroute.segments[j];
-			
-			if (seg.p1.x == seg.p2.x || seg.p1.y == seg.p2.y) {
-			out_stream << "(" << seg.p1.x << "," << seg.p1.y << ")-";
-			out_stream << "(" << seg.p2.x << "," << seg.p2.y << ")" << endl;
-			}
-			
-			else {
-			out_stream << "(" << seg.p1.x << "," << seg.p1.y << ")-";
-			out_stream << "(" << seg.p2.x << "," << seg.p1.y << ")" << endl;
-			out_stream << "(" << seg.p2.x << "," << seg.p1.y << ")-" ;
-			out_stream << "(" << seg.p2.x << "," << seg.p2.y << ")" << endl;
-			}
-/*
-			out_stream << "(" << seg.p1.x << "," << seg.p1.y << ")-";
-			out_stream << "(" << seg.p2.x << "," << seg.p2.y << ")" << endl;
-*/
-		}
-		out_stream << "!" << endl;
-	}
 
-	out_stream.close();
-
-	return 1;
 }
 
 int release(routingInst *rst)
