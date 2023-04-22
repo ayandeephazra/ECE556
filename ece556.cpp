@@ -145,6 +145,10 @@ int readBenchmark(const char *fileName, routingInst *rst)
   rst->edgeCaps = (int *)malloc(rst->numEdges * sizeof(int *));
   rst->edgeUtils = (int *)malloc(rst->numEdges * sizeof(int *));
   // rst->cap = 1; // change as instructed
+  for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
+  {
+    rst->edgeUtils[edge_id] = 0;
+  }
 
   for (int blockage_indx = 0; blockage_indx < num_blockages; blockage_indx++)
   {
@@ -317,6 +321,37 @@ int solveRouting(routingInst *rst)
     }
   }
 
+  // edge Utilization calculation
+  computeEdgeUtilizations(rst);
+
+  return 1;
+}
+
+/* int computingEdgeUtilizations(routingInst *rst)
+   This function calculates edgeUtils param in rst after
+   all other datavariables have been filled out (called at end of solveRouting)
+   input: pointer to the routing instance
+   output: 1 if successful, 0 otherwise (e.g. the data structures are not populated)
+*/
+
+int computeEdgeUtilizations(routingInst *rst)
+{
+
+  for (int net_id = 0; net_id < rst->numNets; net_id++)
+  {
+
+    for (int seg_id = 0; seg_id < rst->nets[net_id].nroute.numSegs; seg_id++)
+    {
+
+      for (int edge_id = 0; edge_id < rst->nets[net_id].nroute.segments[seg_id].numEdges; edge_id++)
+      {
+
+        int edge_in_question = rst->nets[net_id].nroute.segments[seg_id].edges[edge_id];
+        // defaulted to zero, so just incremenent whenever there's a match
+        rst->edgeUtils[edge_in_question - 1]++;
+      }
+    }
+  }
   return 1;
 }
 
