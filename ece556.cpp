@@ -9,6 +9,14 @@
 
 using namespace std;
 
+typedef struct
+{
+  int numEdges;
+  int edgeOverflows;
+  int edgeHistories;
+  int edgeWeights;
+} edge_params;
+
 int readBenchmark(const char *fileName, routingInst *rst)
 {
   /*********** TO BE FILLED BY YOU **********/
@@ -145,6 +153,7 @@ int readBenchmark(const char *fileName, routingInst *rst)
   rst->edgeCaps = (int *)malloc(rst->numEdges * sizeof(int *));
   rst->edgeUtils = (int *)malloc(rst->numEdges * sizeof(int *));
   // rst->cap = 1; // change as instructed
+
   for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
   {
     rst->edgeUtils[edge_id] = 0;
@@ -351,6 +360,27 @@ int computeEdgeUtilizations(routingInst *rst)
         rst->edgeUtils[edge_in_question - 1]++;
       }
     }
+  }
+  return 1;
+}
+
+int computeEdgeWeights(routingInst *rst)
+{
+  edge_params *edge_params_ = (edge_params *)malloc(rst->numEdges * sizeof(edge_params));
+
+  for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
+  {
+    if (rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id] > 0)
+    {
+      edge_params_[edge_id].edgeOverflows = rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id];
+    }
+    else
+    {
+      edge_params_[edge_id].edgeOverflows = 0;
+    }
+
+   // for every kth iteration of rip up and reroute update history using formula from slides and then using 
+   // history value and overflow, find weight (w=h*o)
   }
   return 1;
 }
