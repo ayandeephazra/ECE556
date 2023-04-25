@@ -330,9 +330,6 @@ int solveRouting(routingInst *rst)
     }
   }
 
-  // edge Utilization calculation
-  computeEdgeUtilizations(rst);
-
   return 1;
 }
 
@@ -364,9 +361,9 @@ int computeEdgeUtilizations(routingInst *rst)
   return 1;
 }
 
-int computeEdgeWeights(routingInst *rst)
+int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
 {
-  edge_params *edge_params_ = (edge_params *)malloc(rst->numEdges * sizeof(edge_params));
+  // edge_params *edge_params_ = (edge_params *)malloc(rst->numEdges * sizeof(edge_params));
 
   for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
   {
@@ -378,11 +375,83 @@ int computeEdgeWeights(routingInst *rst)
     {
       edge_params_[edge_id].edgeOverflows = 0;
     }
-
-   // for every kth iteration of rip up and reroute update history using formula from slides and then using 
-   // history value and overflow, find weight (w=h*o)
   }
   return 1;
+}
+
+int rrr(routingInst *rst)
+{
+
+  // edge Utilization calculation, edgeUtils
+  computeEdgeUtilizations(rst);
+
+  bool terminate = false;
+  int loop_var = 1;
+  edge_params *edge_params_ = (edge_params *)malloc(rst->numEdges * sizeof(edge_params));
+
+  while (!terminate)
+  {
+    /* COMPUTING EDGE WEIGHTS*/
+    if (loop_var == 1)
+    {
+      // history = 1 ffor all edges
+
+      for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
+      {
+        if (rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id] > 0)
+        {
+          edge_params_[edge_id].edgeOverflows = rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id];
+        }
+        else
+        {
+          edge_params_[edge_id].edgeOverflows = 0;
+        }
+        // for loop 1 default histories to 1
+        edge_params_[edge_id].edgeHistories = 1;
+        // for every kth iteration of rip up and reroute update history using formula from slides and then using
+        // history value and overflow, find weight (w=h*o)
+        edge_params_[edge_id].edgeWeights = edge_params_[edge_id].edgeHistories * edge_params_[edge_id].edgeOverflows;
+      }
+    }
+    /* NOT loop_var = 1*/
+    else
+    {
+
+      for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
+      {
+        if (rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id] > 0)
+        {
+          edge_params_[edge_id].edgeOverflows = rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id];
+        }
+        else
+        {
+          edge_params_[edge_id].edgeOverflows = 0;
+        }
+        // for loop != 1 histories increment if overflows > 0
+        if (edge_params_[edge_id].edgeOverflows > 0)
+        {
+          edge_params_[edge_id].edgeHistories++;
+        }
+        // for every kth iteration of rip up and reroute update history using formula from slides and then using
+        // history value and overflow, find weight (w=h*o)
+        edge_params_[edge_id].edgeWeights = edge_params_[edge_id].edgeHistories * edge_params_[edge_id].edgeOverflows;
+      }
+    }
+
+    /* CALCULATE NET ORDERING */
+    for(int net_id = 0; net_id<rst->numNets; net_id++){
+      for(int seg_id=0; seg_id<rst->nets[net_id].nroute.numSegs; seg_id++){
+        for(int edge_id=0; edge_id<rst->nets[net_id].nroute.segments[seg_id].numEdges; edge_id++){
+            
+        }
+      }
+    }
+
+    /* TERMINATION CONDITION */
+    // change value of terminate
+    // increment loop_var
+    loop_var++;
+  }
 }
 
 int writeOutput(const char *outRouteFile, routingInst *rst)
