@@ -7,11 +7,10 @@
 #include <fstream>
 #include <iostream>
 
-using namespace std;
+//using namespace std;
 
 typedef struct
 {
-  int numEdges;
   int edgeOverflows;
   int edgeHistories;
   int edgeWeights;
@@ -389,6 +388,13 @@ int rrr(routingInst *rst)
   int loop_var = 1;
   edge_params *edge_params_ = (edge_params *)malloc(rst->numEdges * sizeof(edge_params));
 
+  int *cost_array;
+  cost_array = (int*)malloc(rst->numNets*sizeof(int));
+  // default cost array to 0
+  for(int i=0; i<rst->numNets; i++){
+    cost_array[i] = 0;
+  }
+
   while (!terminate)
   {
     /* COMPUTING EDGE WEIGHTS*/
@@ -442,16 +448,21 @@ int rrr(routingInst *rst)
     for(int net_id = 0; net_id<rst->numNets; net_id++){
       for(int seg_id=0; seg_id<rst->nets[net_id].nroute.numSegs; seg_id++){
         for(int edge_id=0; edge_id<rst->nets[net_id].nroute.segments[seg_id].numEdges; edge_id++){
-            
+          cost_array[net_id] = cost_array[net_id] + edge_params_[edge_id].edgeWeights;
         }
       }
     }
+
+    // sort cost_array based on costs
 
     /* TERMINATION CONDITION */
     // change value of terminate
     // increment loop_var
     loop_var++;
   }
+
+  free(cost_array);
+  free(edge_params_);
 }
 
 int writeOutput(const char *outRouteFile, routingInst *rst)
