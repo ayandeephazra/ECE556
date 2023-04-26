@@ -1,15 +1,10 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                      Q      U      I      C      K      S       O      R      T                                  //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-/******************************************************************************
-
-                            Online C Compiler.
-                Code, Compile, Run and Debug C program online.
-Write your code in this editor and press "Run" button to compile and execute it.
-
-*******************************************************************************/
-
-#include <stdio.h>
-#include <stdlib.h>
+#include "quicksort_dec.h"
 
 void swap(int *a, int *b)
 {
@@ -18,13 +13,8 @@ void swap(int *a, int *b)
   *b = t;
 }
 
-typedef struct
-{
-  int cost;
-  int edge_id;
-} sorted_cost_dict;
 
-// function to find the partition position
+// function to find the partition's position
 int partition(int low, int high, sorted_cost_dict* scd_)
 {
 
@@ -76,30 +66,8 @@ void quickSort_dec(int low, int high, sorted_cost_dict* scd_) {
   }
 }
 
-int main()
-{
-    printf("Hello World");
-    int num = 5 ;
-    sorted_cost_dict *scd_ = (sorted_cost_dict *)malloc(num * sizeof(sorted_cost_dict));
-    
-    for (int i = 0; i<3; i++){
-        scd_[i].cost = i*i+17*i+90;
-        scd_[i].edge_id = i;
-    }
-    scd_[3].cost = 119;
-    scd_[3].edge_id = 3;
-    scd_[4].cost = 106;
-    scd_[4].edge_id = 4;
-    for (int i = 0; i<num; i++){
-        printf("cost%d\n", scd_[i].cost);
-        printf("id%d\n", scd_[i].edge_id );
-     
-    }
-    quickSort_dec(0, num-1, scd_);
-    for (int i = 0; i<num; i++){
-        printf("cost%d\n", scd_[i].cost);
-        printf("id%d\n", scd_[i].edge_id );
-     
-    }
-    return 0;
-}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//                                      E      N      D                                                             //
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
