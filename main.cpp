@@ -1,6 +1,7 @@
 // ECE556 - Copyright 2014 University of Wisconsin-Madison.  All Rights Reserved.
 
 #include "ece556.h"
+#include "quicksort_dec.h"
 
 int main(int argc, char **argv)
 {
@@ -23,7 +24,15 @@ int main(int argc, char **argv)
  		printf("ERROR: reading input file \n");
  		return 1;
  	}
-	
+
+	/// run SUBNET gen
+ 	subnetGen(rst);
+ 	/*if(status==0){
+ 		printf("ERROR: running routing \n");
+ 		release(rst);
+ 		return 1;
+ 	}
+	*/
  	/// run actual routing
  	status = solveRouting(rst);
  	if(status==0){

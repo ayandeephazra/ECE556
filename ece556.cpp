@@ -728,6 +728,7 @@ int rrr(routingInst *rst)
   free(scd_);
   free(cost_array);
   free(edge_params_);
+  return 1;
 }
 
 int writeOutput(const char *outRouteFile, routingInst *rst)

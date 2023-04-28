@@ -5,6 +5,7 @@
 #define ECE556_H
 
 #include <stdio.h>
+#include "quicksort_dec.h"
 
  /**
   * A structure to represent a 2D Point. 
@@ -85,6 +86,8 @@
 int readBenchmark(const char *fileName, routingInst *rst);
 
   
+void subnetGen(routingInst *rst);
+
 /* int solveRouting(routingInst *rst)
    This function creates a routing solution
    input: pointer to the routing instance
