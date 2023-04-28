@@ -5,7 +5,6 @@
 #define ECE556_H
 
 #include <stdio.h>
-#include "quicksort_dec.h"
 
  /**
   * A structure to represent a 2D Point. 

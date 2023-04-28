@@ -710,11 +710,13 @@ int rrr(routingInst *rst)
     for (int ele = 0; ele < rst->numNets; ele++)
     {
       scd_[ele].cost = cost_array[ele];
-      scd_[ele].edge_id = ele;
+      scd_[ele].net_id = ele;
     }
 
     /* sort scd_ in nlogn */
-    quickSort_dec(0, rst->numNets - 1, scd_);
+    /* changes nets in rst too now*/
+    quickSort_dec(0, rst->numNets - 1, scd_, rst);
+    
 
     /* A* */
 
