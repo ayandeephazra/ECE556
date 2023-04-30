@@ -13,18 +13,19 @@
 #include <queue>
 #include <math.h>
 
-using namespace std;
-
 /* parts of namespace used */
-using std::pair;
-using std::priority_queue;
-using std::unordered_map;
 using std::vector;
+using std::pair;
+using std::unordered_map;
+using std::priority_queue;
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 /*                    Global                                                */
 //////////////////////////////////////////////////////////////////////////////
-/* constants to modify the relative effects
+/* constants to modify the relative effects 
  * of edgeUtil, and edgeCap
  */
 const double MAX_HEUR_COST = 20.0;
@@ -40,55 +41,17 @@ const double unitDist = 0.99;
  */
 static double prevAvgCost = 0;
 
+
 //////////////////////////////////////////////////////////////////////////////
 /*                    Classes/Structs                                       */
 //////////////////////////////////////////////////////////////////////////////
 /* struct to store nodes as they are visited in the route from S to T*/
+namespace{
 
-/*
-  Node(const Node &other) : loc(other.loc), parent(other.parent), edgeID(other.edgeID),
-                            distFromS(other.distFromS), distToT(other.distToT),
-                            edgeUtil(other.edgeUtil), edgeCap(other.edgeCap),
-                            F(other.F), G(other.G) {}
-
-  bool operator==(const Node &n) const
-  {
-    return (loc.x == n.loc.x && loc.y == n.loc.y);
-  }
-  bool operator!=(const Node &n) const
-  {
-    return !(loc.x == n.loc.x && loc.y == n.loc.y);
-  }
-*/
-/*
-bool CompareNodeCost(Node_ *n1, Node_ *n2);
-
-int PointHash(point *pt, routingInst *rst);
-*/
-
-namespace
-{
-/*
-  typedef struct
-  {
-    point loc;     // x,y of this node
-    Node_ parent; // previous node
-    int edgeID;    // may want to eliminate, since we could calc
-    int distFromS; // actual route distance to node
-    int distToT;   // manhattan dist to target
-    int edgeUtil;  // util of edge from parent to loc
-    int edgeCap;   // cap of edge from parent to loc
-
-    double F; // total cost of this node (G + H)
-    double G; // cost of route to this node
-
-  } Node_;
-*/
-
-struct Node_
+struct Node
 {
   point loc;     //x,y of this node
-  Node_* parent;  //previous node 
+  Node* parent;  //previous node 
   int edgeID;    //may want to eliminate, since we could calc 
   int distFromS; //actual route distance to node
   int distToT;   //manhattan dist to target
@@ -100,7 +63,7 @@ struct Node_
 
 
   //STRUCT FUNCTIONS
-  Node_() : loc(-1, -1), parent(NULL), edgeID(0), distFromS(-1),
+  Node() : loc(-1, -1), parent(NULL), edgeID(0), distFromS(-1),
             distToT(-1), edgeUtil(0), edgeCap(0), F(-1), G(-1)
   {
     //initializes fields to invalid data so that we can know if a
@@ -108,48 +71,50 @@ struct Node_
     //
   }
 
-  Node_( const Node_& other ): loc(other.loc), parent(other.parent), edgeID(other.edgeID),
+  Node( const Node& other ): loc(other.loc), parent(other.parent), edgeID(other.edgeID),
                       distFromS(other.distFromS), distToT(other.distToT),
                       edgeUtil(other.edgeUtil), edgeCap(other.edgeCap),
                       F(other.F), G(other.G) {}
 
-  bool operator==(const Node_& n) const
+  bool operator==(const Node& n) const
   {
     return (loc == n.loc);
   }
-  bool operator!=(const Node_&n) const
+  bool operator!=(const Node&n) const
   {
     return !(loc == n.loc);
   }
 };
 
-  /* used to compare elements in the open set */
-  class CompareNodeCost
-  {
-  public:
-    bool operator()(Node_ *n1, Node_ *n2)
-    {
-      // returns true if e2 has less cost than e1
-      return (n1->F > n2->F);
-    }
-  };
 
-  class PointHash
-  {
+/* used to compare elements in the open set */
+class CompareNodeCost
+{
   public:
-    std::size_t operator()(const point &pt) const
+    bool operator()( const Node* n1, const Node* n2 ) const
     {
-      return (pt.y + gy * pt.x);
+      //returns true if e2 has less cost than e1
+      return n1->F > n2->F;
+    }
+};      
+
+
+class PointHash
+{
+  public:
+    std::size_t operator()(const point& pt) const
+    {
+      return pt.y + gy * pt.x;
     }
 
-    // same as rst->gy, used to calc unique index into 2d array
+  //same as rst->gy, used to calc unique index into 2d array
     static int gy;
-  };
-
+};
 
 int PointHash::gy = 0;
 
-}
+} //close namespace
+
 //////////////////////////////////////////////////////////////////////////////
 /*                    Function declarations                                 */
 //////////////////////////////////////////////////////////////////////////////
@@ -161,20 +126,20 @@ int PointHash::gy = 0;
  * EXIT_FAILURE  something went wrong
  * EXIT_SUCCESS  successfully routed
  */
-void calcF(Node_ *n);
-void calcG(Node_ *n);
+void calcF( Node& n ) ;
+void calcG( Node& n ) ;
 
-void getNeighbors(routingInst *rst, vector<Node_> *neighbors,
-                  Node_ *current, Node_ *T);
+void getNeighbors(routingInst *rst, vector<Node>& neighbors,
+                    Node* current, Node T);
 
-int retrace(routingInst *rst, Node_ *nS, Node_ *current, int netInd, int segInd);
+int retrace(routingInst *rst, Node* nS, Node* current, int netInd, int segInd) ;
 
 int solveRoutingAstar(routingInst *rst);
 
-int routeNetAstar(routingInst *rst, int, int, int);
+int routeNetAstar(routingInst *rst,int ,int ,int);
 
-// returns the manhattan distance between 2 nodes
-int m_dist(const Node_ *n1, const Node_ *n2);
+//returns the manhattan distance between 2 nodes
+int m_dist( const Node& n1, const Node& n2);
 
-void deleteMap(unordered_map<point, Node_ *, PointHash> &group);
+void deleteMap( unordered_map<point, Node*, PointHash>& group );
 #endif

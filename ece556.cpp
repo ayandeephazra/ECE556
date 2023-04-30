@@ -717,14 +717,14 @@ int rrr(routingInst *rst)
 
     /* sort scd_ in nlogn */
     /* changes nets in rst too now*/
-    quickSort_dec(0, rst->numNets - 1, scd_, rst);
+    quickSort_dec(0, (rst->numNets - 1), scd_, rst);
     
 
     /* A* */
     int status = solveRoutingAstar(rst);
     /* TERMINATION CONDITION */
     // change value of terminate
-    if(count == 500)
+    if(count == 100)
     {
       terminate = true;
       

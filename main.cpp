@@ -1,6 +1,7 @@
 // ECE556 - Copyright 2014 University of Wisconsin-Madison.  All Rights Reserved.
 
 #include "ece556.h"
+#include "Astar.h"
 #include "quicksort_dec.h"
 
 int main(int argc, char **argv)
@@ -75,14 +76,25 @@ int main(int argc, char **argv)
 	status = solveRouting(rst);
 	if (status == 0)
 	{
-		printf("ERROR: running routing \n");
+		printf("ERROR: running solveRouting \n");
 		release(rst);
 		return 1;
 	}
 
 	/// RRR
-	if(enable_net_order_and_rrr){
-
+	if (enable_net_order_and_rrr)
+	{
+		
+		//status = rrr(rst);
+		status = solveRoutingAstar(rst);
+		/*
+		if (status == EXIT_FAILURE)
+		{
+			printf("ERROR: running rrr \n");
+			release(rst);
+			return 1;
+		}
+		*/
 	}
 
 	/// write the result
