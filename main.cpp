@@ -20,12 +20,12 @@ int main(int argc, char **argv)
 	char *arg1 = argv[1];
 	char *arg2 = argv[2];
 
-	if (!(arg1[0] != '-' & arg1[1] != 'd' & arg1[2] != '=' & (arg1[3] != '0' | arg1[3] != '1')))
+	if (((arg1[0] != '-') & (arg1[1] != 'd') & (arg1[2] != '=') & ((arg1[3] != '0') | (arg1[3] != '1'))))
 	{
 		printf("ERROR: reading input file \n");
 		return 1;
 	}
-	if (!(arg2[0] != '-' & arg2[1] != 'd' & arg2[2] != '=' & (arg2[3] != '0' | arg2[3] != '1')))
+	if (((arg2[0] != '-') & (arg2[1] != 'd') & (arg2[2] != '=') & ((arg2[3] != '0') | (arg2[3] != '1'))))
 	{
 		printf("ERROR: reading input file \n");
 		return 1;
@@ -78,6 +78,11 @@ int main(int argc, char **argv)
 		printf("ERROR: running routing \n");
 		release(rst);
 		return 1;
+	}
+
+	/// RRR
+	if(enable_net_order_and_rrr){
+
 	}
 
 	/// write the result
