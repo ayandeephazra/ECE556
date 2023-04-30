@@ -720,7 +720,7 @@ int rrr(routingInst *rst)
     
     solveRouting(rst);
     /* A* */
-    int status = solveRoutingAstar(rst);
+   // int status = solveRoutingAstar(rst);
     /* TERMINATION CONDITION */
     // change value of terminate
     if(loop_var == 500)
@@ -824,7 +824,6 @@ int release(routingInst *rst)
   rst->numNets = 0;
   free(rst->nets);
   rst->nets = NULL;
-
   // free(rst->nets->nroute.segments)
 
   return 1;
