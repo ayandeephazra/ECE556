@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
 	/// RRR
 	if(enable_net_order_and_rrr){
-		rrr(rst);
+
 	}
 
 	/// write the result

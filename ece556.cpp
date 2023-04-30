@@ -3,12 +3,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "ece556.h"
+#include "Astar.h"
 #include "quicksort_dec.h"
 #include <fstream>
 #include <iostream>
 
-// using namespace std;
+ using namespace std;
 
 typedef struct
 {
@@ -618,6 +618,7 @@ int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
   return 1;
 }
 
+
 int rrr(routingInst *rst)
 {
 
@@ -719,9 +720,18 @@ int rrr(routingInst *rst)
     
     solveRouting(rst);
     /* A* */
-
+    int status = solveRoutingAstar(rst);
     /* TERMINATION CONDITION */
     // change value of terminate
+    if(count == 500)
+    {
+      terminate = true;
+      
+    }
+    else
+    {
+      count++;
+    }
     // increment loop_var
     loop_var++;
   }
