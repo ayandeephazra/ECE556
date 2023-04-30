@@ -8,7 +8,7 @@
 #include <fstream>
 #include <iostream>
 
- using namespace std;
+//using namespace std;
 
 typedef struct
 {
@@ -646,7 +646,7 @@ int rrr(routingInst *rst)
   //                       R I P - U P - A N D - R E R O U T E   W H I L E   L O O P                                  //
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  while (loop_var<200) //!terminate & 
+  while (terminate & loop_var<200) //!terminate & 
   {
     /* COMPUTING EDGE WEIGHTS*/
     if (loop_var == 1)
@@ -723,17 +723,17 @@ int rrr(routingInst *rst)
     int status = solveRoutingAstar(rst);
     /* TERMINATION CONDITION */
     // change value of terminate
-    if(count == 500)
+    if(loop_var == 500)
     {
       terminate = true;
       
     }
     else
     {
-      count++;
+      loop_var++;
     }
     // increment loop_var
-    loop_var++;
+    //loop_var++;
   }
   // free memory formerly declared
   free(scd_);
