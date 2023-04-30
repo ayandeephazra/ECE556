@@ -725,7 +725,6 @@ int rrr(routingInst *rst)
     // increment loop_var
     loop_var++;
   }
-
   // free memory formerly declared
   free(scd_);
   free(cost_array);
