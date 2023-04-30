@@ -91,8 +91,12 @@ typedef struct
 */
 int readBenchmark(const char *fileName, routingInst *rst);
 
-int rrr(routingInst *rst);
-
+/* void subnetGen(routingInst *rst)
+   This function creates an optimized subnet before the initial
+   basic solverouting is run.
+   input: pointer to the routing instance
+   output: 1 if successful, 0 otherwise (e.g. the data structures are not populated)
+*/
 void subnetGen(routingInst *rst);
 
 /* int solveRouting(routingInst *rst)
@@ -102,6 +106,13 @@ void subnetGen(routingInst *rst);
 */
 int solveRouting(routingInst *rst);
 
+/* int rrr(routingInst *rst)
+   This function runs the main loop of the RRR functionality by first computing edge
+   weights, then ordering the nets based on costs calculated and then running our 
+   implemeted A star search algorithm.
+   input: pointer to the routing instance
+   output: 1 if successful, 0 otherwise (e.g. the data structures are not populated)
+*/
 int rrr(routingInst *rst);
   
 /* int writeOutput(const char *outRouteFile, routingInst *rst)

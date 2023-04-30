@@ -82,7 +82,13 @@ int main(int argc, char **argv)
 
 	/// RRR
 	if(enable_net_order_and_rrr){
-		rrr(rst);
+		status = rrr(rst);
+	}
+	if (status == 0)
+	{
+		printf("ERROR: in RRR except not in A star or quicksort \n");
+		release(rst);
+		return 1;
 	}
 
 	/// write the result
