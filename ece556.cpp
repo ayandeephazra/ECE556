@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "ece556.h"
+#include "Astar.h"
 #include "quicksort_dec.h"
 #include <fstream>
 #include <iostream>
@@ -618,6 +618,7 @@ int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
   return 1;
 }
 
+
 int rrr(routingInst *rst)
 {
 
@@ -645,6 +646,7 @@ int rrr(routingInst *rst)
   //                       R I P - U P - A N D - R E R O U T E   W H I L E   L O O P                                  //
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  int count = 0;
   while (!terminate)
   {
     /* COMPUTING EDGE WEIGHTS*/
@@ -719,9 +721,18 @@ int rrr(routingInst *rst)
     
 
     /* A* */
-
+    int status = solveRoutingAstar(rst);
     /* TERMINATION CONDITION */
     // change value of terminate
+    if(count == 500)
+    {
+      terminate = true;
+      
+    }
+    else
+    {
+      count++;
+    }
     // increment loop_var
     loop_var++;
   }
