@@ -93,6 +93,8 @@ void subnetGen(routingInst *rst);
    output: 1 if successful, 0 otherwise (e.g. the data structures are not populated) 
 */
 int solveRouting(routingInst *rst);
+
+int rrr(routingInst *rst);
   
 /* int writeOutput(const char *outRouteFile, routingInst *rst)
    Write the routing solution obtained from solveRouting(). 

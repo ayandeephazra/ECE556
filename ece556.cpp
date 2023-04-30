@@ -645,7 +645,7 @@ int rrr(routingInst *rst)
   //                       R I P - U P - A N D - R E R O U T E   W H I L E   L O O P                                  //
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  while (!terminate)
+  while (loop_var<200) //!terminate & 
   {
     /* COMPUTING EDGE WEIGHTS*/
     if (loop_var == 1)
@@ -717,7 +717,7 @@ int rrr(routingInst *rst)
     /* changes nets in rst too now*/
     quickSort_dec(0, rst->numNets - 1, scd_, rst);
     
-
+    solveRouting(rst);
     /* A* */
 
     /* TERMINATION CONDITION */
