@@ -21,13 +21,13 @@ CCFLAGS = $(CCOPT)
 CCLNFLAGS = -lm -pthread 
 
 #------------------------------------------------------------                   
-#  make all      : to compile.                                     
-#  make execute  : to compile and execute.                         
+#  make all      : to compile.                                   omputeEdgeWeights.o   
+#  make execute  : to compile and execute.        computeEdgeWeights.o                  
 #------------------------------------------------------------    
 
-ROUTE.exe: main.o ece556.o aStar.o computeEdgeWeights.o netOrdering.o
+ROUTE.exe: main.o ece556.o aStar.o netOrdering.o
 	/bin/rm -f ROUTE.exe
-	$(CCC) $(LINKFLAGS) $(CCFLAGS) main.o ece556.o aStar.o computeEdgeWeights.o netOrdering.o $(CCLNFLAGS) -o ROUTE.exe
+	$(CCC) $(LINKFLAGS) $(CCFLAGS) main.o ece556.o aStar.o netOrdering.o $(CCLNFLAGS) -o ROUTE.exe
 
 Test_edgepts.exe: test_edgeid.o ece556.o 
 	/bin/rm -f Test_edgepts.exe
@@ -65,9 +65,9 @@ aStar.o: aStar.h aStar.h ece556.h
 	/bin/rm -f aStar.o
 	$(CCC) $(CCFLAGS) aStar.cpp -c
 	
-computeEdgeWeights.o: computeEdgeWeights.cpp ece556.h computeEdgeWeights.h
-	/bin/rm -f computeEdgeWeights.o
-	$(CCC) $(CCFLAGS) computeEdgeWeights.cpp -c
+#computeEdgeWeights.o: computeEdgeWeights.cpp ece556.h computeEdgeWeights.h
+#	/bin/rm -f computeEdgeWeights.o
+#	$(CCC) $(CCFLAGS) computeEdgeWeights.cpp -c
 	
 netOrdering.o: netOrdering.cpp ece556.h netOrdering.h
 	/bin/rm -f netOrdering.o

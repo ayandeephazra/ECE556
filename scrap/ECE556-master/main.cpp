@@ -1,10 +1,8 @@
 // ECE556 - Copyright 2014 University of Wisconsin-Madison.  All Rights Reserved.
 
 #include "ece556.h"
-//#include "lees.h"
 #include "aStar.h"
 #include "netOrdering.h"
-#include "computeEdgeWeights.h"
 #include <sys/time.h>
 #include <cstdio>
 #include <cstdlib>
@@ -35,18 +33,16 @@ int main(int argc, char **argv)
   timeval startTime;
   gettimeofday(&startTime, NULL);
 
- 	if(argc!=5)
-  {
- 		printf("Usage : ./ROUTE.exe <input_benchmark_name> <output_file_name> \n");
- 		return 1;
- 	}
+  if (argc != 5)
+	{
+		printf("Usage : ./ROUTE.exe -d=<either 0 or 1> -n=<either 0 or 1> <input_benchmark_name> <output_file_name> \n");
+		return 1;
+	}
 
   int status;
   int netDecompEnabled;
   int netOrderingEnabled;
-  int bestCost = 0;
-  int firstRun = 1;
-  int noChange = 0;
+
   char *inputFileName = argv[3];
   char *outputFileName = argv[4];
   vector<int> edgeOverflow;
@@ -55,41 +51,24 @@ int main(int argc, char **argv)
  	
  	/// create a new routing instance
  	routingInst *rst = new routingInst;
-  
-  if(sscanf(argv[1], "-d=%d", &netDecompEnabled) != 1)
-  {
-    printf("WARNING: Incorrect argument for net decomposition.\n");
-    return 1; 
-  }
 
-  if(sscanf(argv[2], "-n=%d", &netOrderingEnabled) != 1)
-  {
-    printf("WARNING: Incorrect argument for net ordering.\n");
-    return 1;
-  }
+  	char *arg1 = argv[1];
+	char *arg2 = argv[2];
 
-/*
-  int *edgeOverflow = (int*)malloc(rst->numEdges * sizeof(int));
-  if (edgeOverflow==NULL)
-  {
-      printf("Failed to allocate memory for edgeOverflow.");
-  }
+  if (((arg1[0] != '-') & (arg1[1] != 'd') & (arg1[2] != '=') & ((arg1[3] != '0') | (arg1[3] != '1'))))
+	{
+		printf("ERROR: reading input file \n");
+		return 1;
+	}
+	if (((arg2[0] != '-') & (arg2[1] != 'd') & (arg2[2] != '=') & ((arg2[3] != '0') | (arg2[3] != '1'))))
+	{
+		printf("ERROR: reading input file \n");
+		return 1;
+	}
 
-  int *edgeWeight = (int*)malloc(rst->numEdges * sizeof(int));
-  if (edgeWeight==NULL)
-  {
-      printf("Failed to allocate memory for edgeWeight.");
-  }
-
-  int *edgeHistory = (int*)malloc(rst->numEdges * sizeof(int));
-  if (edgeHistory==NULL)
-  {
-      printf("Failed to allocate memory for edgeHistory.");
-  }
-*/
-  
-
- 	
+  	// character to integer
+	netDecompEnabled = arg1[3] - '0';
+	netOrderingEnabled = arg2[3] - '0';
 
   /* initializes routingInst pointers to null */
   rst->edgeCaps = NULL;
@@ -97,34 +76,26 @@ int main(int argc, char **argv)
   rst->nets = NULL;
 
     
-	
  	/// read benchmark
  	status = readBenchmark(inputFileName, rst);
- 	if(status==EXIT_FAILURE){
- 		printf("ERROR: reading input file \n");
+ 	if(status==0){
+ 		printf("ERROR: cannot read file \n");
  		return 1;
  	}
 
-  //status = solveRoutingLees(rst);
-  //if( status == EXIT_FAILURE )
-  //{
-    //printf( "ERROR: lees routing\n");
-    //return 1;
-  //}
-  //return 0;
-
+    printf("RUNNING initial routing \n");
 		status = solveRouting(rst);
-   //status = solveRoutingAstar(rst);
+    printf("Completed initial routing \n");
+ 
    	if(status==EXIT_FAILURE){
-   		printf("ERROR: running routing \n");
+   		printf("ERROR: initial solution fails \n");
    		release(rst);
    		return 1;
    	}
 
-  if (netDecompEnabled)
+  if (netDecompEnabled == 1)
   {
-    /* decompose nets */
-    netDecompose(rst);
+    subnetGen(rst);
   }
 
   int vecSize = rst->numEdges;
@@ -150,17 +121,47 @@ int main(int argc, char **argv)
       }
     }
   }
-int iterationNum = 0;
+  int loop_var= 1;
+  int bestCost = 0;
+  int firstRun = 1;
+  int noChange = 0;
 
-  if((netOrderingEnabled == 1) || (netDecompEnabled == 1)){ //if d=0 and n=0 from cmd line, skip RRR
+  // RRR
+  if((netOrderingEnabled == 1)){ 
 	  while (shouldContinue(startTime) || (noChange < 1))
 	  {
-		printf("RRR iteration %d\n", iterationNum);
+		printf("RRR iteration: %d\n", loop_var);
 		int totalCost = 0;
 	    // compute total edge cost for each net
-	    computeEdgeWeights(rst, edgeOverflow, edgeWeight, edgeHistory);
+
+	int temp = 0;
+
+	for(int i = 0; i <= ((rst->numNets)-1); i++){
+		for(int j=0; j <= ((rst->nets[i].nroute.numSegs)-1); j++){ //for each segment in the net
+			for(int k=0; k <= ((rst->nets[i].nroute.segments[j].numEdges)-1); k++){ //for each edge in the segment
+				//parst3: compute overflow for each edge in route
+				temp = rst->nets[i].nroute.segments[j].edges[k]; //get edge number
+				//edgeOverflow[temp-1] = rst->edgeUtils[temp-1] - rst->edgeCaps[temp-1];
+				edgeOverflow.at(temp-1) = rst->edgeUtils[temp-1] - rst->edgeCaps[temp-1];
+				if(edgeOverflow.at(temp-1) < 0){
+					edgeOverflow.at(temp-1) = 0;
+				}
+				//part4: compute weight for each edge in route
+				if(edgeOverflow.at(temp-1) > 0){ //compute edge history
+					edgeHistory.at(temp-1) +=1;
+				}
+				edgeWeight.at(temp-1) = edgeOverflow.at(temp-1) * edgeHistory.at(temp-1);
+				//part 5: total edge weights in route
+				rst->nets[i].nroute.cost += edgeWeight.at(temp-1);
+			}
+		}
+	}
+
+
+      //////////////////////////////////////////////////////////////////////////
 	    
-	    releaseSegsAndEdges(rst); // TODO possibly need to update this depending on how a* allocates memory 
+      // to allow A star to work correctly we must free segs and edges
+	    releaseSegsAndEdges(rst);
 
 	    if (netOrderingEnabled)
 	    {
@@ -169,7 +170,7 @@ int iterationNum = 0;
 
 	    /*printRoutingInst(*rst); */
 	   	/// run actual routing
-	   	//status = solveRoutingLees(rst);
+
 			status = solveRoutingAstar(rst);
 	   	if(status==EXIT_FAILURE){
 	   		printf("ERROR: running routing \n");
@@ -193,32 +194,27 @@ printf("totalCost = %d\nbestCost = %d\n", totalCost, bestCost);
 			noChange += 1;
 		}
 
-		//test if routing instance cost is better than our best instances cost.
-		//if it is better, write it out. also write it out if it is the first
-		//run of the while loop
-		if((totalCost < bestCost) || (firstRun == 1)){
+		// IF OUR CURRENT COST IS LESS THAN BEST COST REWRITE OUTPUT
+    // OR IF FIRST RUN
+		if((firstRun == 1) || (totalCost < bestCost) ){
 			/// write the result
 			bestCost = totalCost;
 			noChange = 0;
 			status = writeOutput(outputFileName, rst);
-			if(status==EXIT_FAILURE){
+			if(status==0){
 				printf("ERROR: writing the result \n");
 				release(rst);
 				return 1;
 			}
 		}
-iterationNum += 1;
+    loop_var += 1;
 	  }
   }	
 
 	release(rst);
 	delete rst;
 
-  //free(edgeOverflow);
-  //free(edgeWeight);
-  //free(edgeHistory);
-  
  	printf("\nDONE!\n");	
 
- 	return 0;
+ 	return 1;
 }

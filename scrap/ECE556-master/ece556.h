@@ -154,12 +154,13 @@ int releaseSegsAndEdges(routingInst *rst);
  */
 void printRoutingInst(routingInst rst);
 
-/* Takes original routing instance after all nets are read from input file
- * and decomposes each net. New net format: (pin0, pin1, pin2, etc.) where
- * pin0 and pin1 are the closest pair of points and the following point pin2
- * is the closest point to the Minimum Bounding Box of pin0 and pin 1
- */
-void netDecompose(routingInst *rst);
+/* void subnetGen(routingInst *rst)
+   This function creates an optimized subnet before the initial
+   basic solverouting is run.
+   input: pointer to the routing instance
+   output: 1 if successful, 0 otherwise (e.g. the data structures are not populated)
+*/
+void subnetGen(routingInst *rst);
 
 /* made available only for testing */
 void getEdgePts(routingInst *rst, int edgeID, point *pt1, point *pt2);

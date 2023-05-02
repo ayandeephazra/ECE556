@@ -3,393 +3,467 @@
 #include "ece556.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <iostream>
 #include <fstream>
 #include <climits>
 using namespace std;
 
-int readNets(FILE *fp, routingInst *rst);
-void netDecompose(routingInst *rst);
+//int readNets(FILE *fp, routingInst *rst);
+void subnetGen(routingInst *rst);
 int readBlockages(FILE *fp, routingInst *rst);
 void getEdgePts(routingInst *rst, int edgeID, point *pt1, point *pt2);
 int getEdgeID(routingInst *rst, int x1, int y1, int x2, int y2);
 
 int readBenchmark(const char *fileName, routingInst *rst)
 {
-  /* Try to open file */
-  FILE *fp;
+  /*********** TO BE FILLED BY YOU **********/
 
-  if (fileName == NULL || rst == NULL)
+  int num_blockages;
+
+  char token1[100], token2[100]; // token3[100], token4[100], token5[100], token6[100], token7[100];
+                                 // int one, two, three, four, five;
+
+  FILE *file;
+  if (!(file = fopen(fileName, "r")))
   {
-    fprintf(stderr, "Passed null arg to readBenchmark.\n");
-    return EXIT_FAILURE;
+    perror("Error, file does not exist");
+    return 0;
   }
 
-  fp = fopen(fileName, "r");
-  if (fp == NULL)
+  char buffer[200]; //= (char*)malloc(200 * sizeof(char *)); // buffer can store 200 characters
+  // rst = (routingInst *)malloc(sizeof(routingInst));
+
+  // while loop to start parsing file
+  // assuming a line is no longer than 200 chars
+  int phase = 1;
+
+  while (fgets(buffer, 200 * sizeof(char), file))
   {
-    fprintf(stderr, "Couldn't open input file.\n");
-    return EXIT_FAILURE;
+    // keyword, 1st number, 2nd number
+    // data variables
+
+    if ((sscanf(buffer, "%s", token1) > 0))
+    {
+      ///////////////////////////////////////////////////
+      //   grid parsing                               //
+      /////////////////////////////////////////////////
+      if ((phase == 1) & (strcmp(token1, "grid") == 0))
+      {
+
+        char x_[100], y_[100];
+        if (sscanf(buffer, "%s %s %s\n", token1, x_, y_) > 0)
+        {
+          rst->gx = atoi(x_);
+          rst->gy = atoi(y_);
+          // num of edges = x*(y-1) + y*(x-1)
+          rst->numEdges = rst->gx * (rst->gy - 1) + rst->gy * (rst->gx - 1);
+        }
+        phase = 2;
+        continue;
+      }
+      ///////////////////////////////////////////////////
+      //   capacity parsing                           //
+      /////////////////////////////////////////////////
+      else if ((phase == 2) & (strcmp(token1, "capacity") == 0))
+      {
+        char capacity[100];
+        if ((sscanf(buffer, "%s %s\n", token1, capacity)) > 0)
+        {
+          rst->cap = atoi(capacity);
+        }
+        phase = 3;
+        continue;
+      }
+
+      ///////////////////////////////////////////////////
+      //   nets parsing                               //
+      /////////////////////////////////////////////////
+      else if ((phase == 3) & (strcmp(token1, "num") == 0))
+      {
+        char nnets[100];
+        if ((sscanf(buffer, "%s %s %s\n", token1, token2, nnets) > 0) & (strcmp(token2, "net") == 0))
+        {
+          rst->numNets = atoi(nnets);
+        }
+
+        phase = 4;
+        break;
+      }
+    }
   }
 
-  /* Parse file and fill in rst */
-  /* grid x, y */
-  if (fscanf(fp, "%*s %d %d ", &(rst->gx), &(rst->gy)) != 2)
-  {
-    fprintf(stderr, "Failed reading grid arg.\n");
-    return EXIT_FAILURE;
-  }
+  // instantiate nets filed in rst
+  rst->nets = (net *)malloc(rst->numNets * sizeof(net));
 
-  /* max edge capacity */
-  if (fscanf(fp, "%*s %d ", &(rst->cap)) != 1)
+  ///////////////////////////////////////////////////
+  //   initialization of nets struct within rst   //
+  /////////////////////////////////////////////////
+  for (int net_indx = 0; net_indx < rst->numNets; net_indx++)
   {
-    fprintf(stderr, "Failed to read capacity.\n");
-    return EXIT_FAILURE;
-  }
+    fgets(buffer, 200 * sizeof(char), file);
+    char temp1[100], temp2[100];
 
-  /* number of nets */
-  if (fscanf(fp, "%*s %*s %d ", &(rst->numNets)) != 1)
+    rst->nets[net_indx].id = net_indx;
+    if ((sscanf(buffer, "%s %s\n", temp1, temp2) > 0))
+    {
+      rst->nets[net_indx].numPins = atoi(temp2);
+    }
+    // allocate mem for pins
+    rst->nets[net_indx].pins = (point *)malloc(rst->nets[net_indx].numPins * sizeof(point));
+    for (int pin_indx = 0; pin_indx < rst->nets[net_indx].numPins; pin_indx++)
+    {
+      fgets(buffer, 200 * sizeof(char), file);
+      char temp3[100], temp4[100];
+
+      if (sscanf(buffer, "%s %s\n", temp3, temp4) > 0)
+      {
+        rst->nets[net_indx].pins[pin_indx].x = atoi(temp3);
+        rst->nets[net_indx].pins[pin_indx].y = atoi(temp4);
+      }
+    }
+  }
+  ////////////////////////////////////////////////////////////////
+  //   Performs blockage parsing. Assuming that bad output      //
+  //   is not a real scenario and so in that case, blockage     //
+  //   statements parse the single integer in the following     //
+  //   line after the last nets' pins. Uses that in a for loop  //
+  //   to cycle through the five integer line input of the      //
+  //   blockages and add to rst instance aptly.                 //
+  ////////////////////////////////////////////////////////////////
+  char temp5[100];
+  fgets(buffer, 200 * sizeof(char), file);
+  if (sscanf(buffer, "%s\n", temp5) > 0)
   {
-    fprintf(stderr, "Failed to read numer of nets.\n");
-    return EXIT_FAILURE;
+    num_blockages = atoi(temp5);
   }
-
-  /* read all nets */
-  if (readNets(fp, rst) == EXIT_FAILURE)
+  typedef struct
   {
-    fprintf(stderr, "Failed to read nets from input file.\n");
-    return EXIT_FAILURE;
-  }
+    int MBB_x1;
+    int MBB_y1;
+    int MBB_x2;
+    int MBB_y2;
+    int newcap;
+  } blockage;
 
-  /* calculate total number of edges, and use this
-   * to mallocate enough space for edgeCaps and edgeUtils
-   */
-  rst->numEdges = rst->gy * (rst->gx - 1) + rst->gx * (rst->gy - 1);
+  blockage *blockage_ = (blockage *)malloc(num_blockages * sizeof(blockage));
 
   rst->edgeCaps = (int *)malloc(rst->numEdges * sizeof(int));
-  if (rst->edgeCaps == NULL)
-  {
-    fprintf(stderr, "Couldn't malloc rst->edgeCaps.\n");
-    return EXIT_FAILURE;
-  }
-
-  /* initialize edgeUtils to 0, edgeCaps to cap */
   rst->edgeUtils = (int *)malloc(rst->numEdges * sizeof(int));
-  if (rst->edgeUtils == NULL)
+  // rst->cap = 1; // change as instructed
+
+  for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
   {
-    fprintf(stderr, "couldn't allocate edgeUtils.\n");
-    return EXIT_FAILURE;
+    rst->edgeUtils[edge_id] = 0;
   }
 
-  for (int i = 0; i < rst->numEdges; i++)
+  for (int blockage_indx = 0; blockage_indx < num_blockages; blockage_indx++)
   {
-    rst->edgeCaps[i] = rst->cap;
-    rst->edgeUtils[i] = 0;
-  }
+    fgets(buffer, 200 * sizeof(char), file);
 
-  /* read in blockages */
-  if (readBlockages(fp, rst) == EXIT_FAILURE)
-  {
-    fprintf(stderr, "Failed to read blockages from input file.\n");
-    return EXIT_FAILURE;
-  }
+    char MBB_x1[100], MBB_x2[100], MBB_y1[100], MBB_y2[100], newcap[100];
 
-  if (fclose(fp) != 0)
-  {
-    fprintf(stderr, "There was an error on closing the input file.\n");
-    return EXIT_FAILURE;
-  }
-
-  return EXIT_SUCCESS;
-}
-
-/* parses input file for nets, and allocates them into the
- * routingInst.
- *
- * returns:
- * EXIT_FAILURE - on fail
- * EXIT_SUCCESS - on successfull read
- */
-int readNets(FILE *fp, routingInst *rst)
-{
-
-  int i, j;
-
-  /* parameter check */
-  if (fp == NULL || rst == NULL)
-  {
-    fprintf(stderr, "Passed null arg to readNets.\n");
-    return EXIT_FAILURE;
-  }
-
-  /* allocate memory for nets array */
-  rst->nets = (net *)malloc(rst->numNets * sizeof(net));
-  if (rst->nets == NULL)
-  {
-    fprintf(stderr, "Failed to allocate nets.\n");
-    return EXIT_FAILURE;
-  }
-
-  for (i = 0; i < rst->numNets; i++)
-  {
-    /* initialize nroute.segments to NULL */
-    rst->nets[i].nroute.segments = NULL;
-
-    /* get net name and  number of pins of net */
-    /*if(fscanf(fp, "%*c"); */
-    if (fscanf(fp, "%*c%d %d ", &(rst->nets[i].id), &(rst->nets[i].numPins)) != 2)
+    if (sscanf(buffer, "%s %s %s %s %s\n", MBB_x1, MBB_y1, MBB_x2, MBB_y2, newcap) > 0)
     {
-      fprintf(stderr, "Failed to get net or num pins on iter:  %d.\n", i);
-      return EXIT_FAILURE;
+      blockage_[blockage_indx].MBB_x1 = atoi(MBB_x1);
+      blockage_[blockage_indx].MBB_y1 = atoi(MBB_y1);
+      blockage_[blockage_indx].MBB_x2 = atoi(MBB_x2);
+      blockage_[blockage_indx].MBB_y2 = atoi(MBB_y2);
+      blockage_[blockage_indx].newcap = atoi(newcap);
     }
+  }
+  // default capacity initialization
+  for (int edge_indx = 0; edge_indx < rst->numEdges; edge_indx++)
+  {
+    rst->edgeCaps[edge_indx] = rst->cap;
+  }
 
-    /* create array of pins */
-    rst->nets[i].pins = (point *)malloc(rst->nets[i].numPins * sizeof(point));
-    if (rst->nets[i].pins == NULL)
+  for (int recalc_indx = 0; recalc_indx < num_blockages; recalc_indx++)
+  {
+    // same row blockage calculation
+    if (blockage_[recalc_indx].MBB_x1 == blockage_[recalc_indx].MBB_x2)
     {
-      fprintf(stderr, "Failed to allocate pin array for net %d.\n", rst->nets[i].id);
-      return EXIT_FAILURE;
-    }
-
-    /* populate array */
-    for (j = 0; j < rst->nets[i].numPins; j++)
-    {
-      if (fscanf(fp, "%d %d ", &(rst->nets[i].pins[j].x), &(rst->nets[i].pins[j].y)) != 2)
+      if (blockage_[recalc_indx].MBB_y1 != blockage_[recalc_indx].MBB_y2)
       {
-        fprintf(stderr, "Failed to read pin coordinates of net %d.\n", rst->nets[i].id);
-        return EXIT_FAILURE;
+        if (blockage_[recalc_indx].MBB_y1 < blockage_[recalc_indx].MBB_y2)
+        {
+          rst->edgeCaps[(rst->gy * (rst->gx - 1)) + blockage_[recalc_indx].MBB_x1 +
+                        (rst->gx * blockage_[recalc_indx].MBB_y1)] = blockage_[recalc_indx].newcap;
+        }
+        else
+        {
+          rst->edgeCaps[(rst->gy * (rst->gx - 1)) + blockage_[recalc_indx].MBB_x2 +
+                        (rst->gx * blockage_[recalc_indx].MBB_y2)] = blockage_[recalc_indx].newcap;
+        }
+      }
+    }
+    // same column blockage calculation
+    else
+    {
+      if (blockage_[recalc_indx].MBB_x1 < blockage_[recalc_indx].MBB_x2)
+      {
+        rst->edgeCaps[(blockage_[recalc_indx].MBB_y1 * (rst->gx - 1)) +
+                      blockage_[recalc_indx].MBB_x1] = blockage_[recalc_indx].newcap;
+      }
+      else
+      {
+        rst->edgeCaps[(blockage_[recalc_indx].MBB_y2 * (rst->gx - 1)) +
+                      blockage_[recalc_indx].MBB_x2] = blockage_[recalc_indx].newcap;
       }
     }
   }
 
-  return EXIT_SUCCESS;
+  fclose(file);
+  return 1;
 }
 
-/* Takes original routing instance after all nets are read from input file
- * and decomposes each net. New net format: (pin0, pin1, pin2, etc.) where
- * pin0 and pin1 are the closest pair of points and the following point pin2
- * is the closest point to the Minimum Bounding Box of pin0 and pin 1
- */
-void netDecompose(routingInst *rst)
-{
-  int i, j, k, l, m;
-  point start0, start1, test0, test1, pt, closestPt;
-  int recDistance, minDistance;
-  int x, x1, x2, y, y1, y2;
-  bool contains;
-  point *newList = NULL;
+/* void subnetGen(routingInst *rst)
+   This function creates an optimized subnet before the initial
+   basic solverouting is run.
+   input: pointer to the routing instance
+   output: 1 if successful, 0 otherwise (e.g. the data structures are not populated)
+*/
 
-  /** Loop through all nets in the routing instance and decompose each **/
-  for (i = 0; i < rst->numNets; i++)
+void subnetGen(routingInst *rst)
+{
+
+  int shortestPath;
+  int MBB_x1, MBB_y1, MBB_x2, MBB_y2;
+  point *tempArray = NULL;
+  int distToSteinerPt;
+  int flag;
+  point pMBB_init0, pMBB_init1;
+  point pC, shortestPath_pC;
+  point temp0, temp1;
+
+  for (auto net_itr = 0; net_itr != rst->numNets; net_itr++)
   {
-    /**find closest pair of points to form initial MBB - set first two points as initial solution**/
-    minDistance = abs(rst->nets[i].pins[0].x - rst->nets[i].pins[1].x) + abs(rst->nets[i].pins[0].y - rst->nets[i].pins[1].y);
-    start0 = rst->nets[i].pins[0];
-    start1 = rst->nets[i].pins[1];
-    for (j = 0; j < rst->nets[i].numPins; j++)
+
+    if (net_itr == rst->numNets)
     {
-      for (k = 0; k < rst->nets[i].numPins; k++)
+      free(tempArray);
+    }
+    // shortestPath between 2 points to draw the first MBB
+    shortestPath = abs(rst->nets[net_itr].pins[0].x - rst->nets[net_itr].pins[1].x) +
+                   abs(rst->nets[net_itr].pins[0].y - rst->nets[net_itr].pins[1].y);
+    // First 2 points of the first MBB
+    pMBB_init0 = rst->nets[net_itr].pins[0];
+    pMBB_init1 = rst->nets[net_itr].pins[1];
+
+    for (auto loop1 = 0; loop1 != rst->nets[net_itr].numPins;)
+    {
+      for (auto loop2 = 0; loop2 != rst->nets[net_itr].numPins;)
       {
-        recDistance = abs(rst->nets[i].pins[j].x - rst->nets[i].pins[k].x) + abs(rst->nets[i].pins[j].y - rst->nets[i].pins[k].y);
-        /**if not same point and rect. dist. less than minimum tested, update start MBB points**/
-        if ((recDistance != 0) && (recDistance < minDistance))
+        loop1++;
+        loop2++;
+        if (loop1 == rst->nets[net_itr].numPins && loop2 == rst->nets[net_itr].numPins)
         {
-          minDistance = recDistance;
-          start0 = rst->nets[i].pins[j];
-          start1 = rst->nets[i].pins[k];
+          // Place the closest 2 start points of MBB into a temp Array.
+          tempArray = (point *)realloc(tempArray, rst->nets[net_itr].numPins * sizeof(point));
+
+          tempArray[0] = pMBB_init0;
+          tempArray[1] = pMBB_init1;
+        }
+
+        distToSteinerPt = abs(rst->nets[net_itr].pins[loop1].x - rst->nets[net_itr].pins[loop2].x) + abs(rst->nets[net_itr].pins[loop1].y - rst->nets[net_itr].pins[loop2].y);
+
+        // do nothing as it's the same point
+        if (distToSteinerPt == 0)
+        {
+        }
+        // is distance to Steiner Pt < current shortest path calculated
+        else if (distToSteinerPt < shortestPath)
+        {
+          pMBB_init0 = rst->nets[net_itr].pins[loop1];
+          pMBB_init1 = rst->nets[net_itr].pins[loop2];
+
+          shortestPath = distToSteinerPt;
         }
       }
     }
 
-    /**Place closest points first in temporary list and continue decomposition**/
-    newList = (point *)realloc(newList, rst->nets[i].numPins * sizeof(point));
-    newList[0] = start0;
-    newList[1] = start1;
-    for (k = 0; k < (rst->nets[i].numPins - 2); k++)
+    for (auto arr_itr = 0; arr_itr != (rst->nets[net_itr].numPins - 1); arr_itr++)
     {
-      /** MBB to test against is MBB of last two poinst in temp list**/
-      test0 = newList[k];
-      test1 = newList[k + 1];
-      closestPt.x = INT_MAX;
-      closestPt.y = INT_MAX;
-      minDistance = INT_MAX;
-      /**Loop through all pins in net to determine closest to MBB**/
-      for (l = 0; l < rst->nets[i].numPins; l++)
+      if (arr_itr == (rst->nets[net_itr].numPins - 2))
       {
-        pt = rst->nets[i].pins[l];
-        // Check if temp list already contains the test point before running
-        contains = false;
-        for (m = 0; m < k + 2; m++)
+        // Update the routing instance with the recently added points in the tempArray
+        for (auto pin_itr = 0; pin_itr != rst->nets[net_itr].numPins; pin_itr++)
         {
-          if ((pt.x == newList[m].x) && (pt.y == newList[m].y))
-          {
-            contains = true;
-          }
+          rst->nets[net_itr].pins[pin_itr].x = tempArray[pin_itr].x;
+          rst->nets[net_itr].pins[pin_itr].y = tempArray[pin_itr].y;
         }
-        // if point not mapped, find its rectilinear distance to the MBB
-        if (!contains)
-        {
-          x = pt.x;
-          y = pt.y;
-          x1 = test0.x;
-          x2 = test1.x;
-          y1 = test0.y;
-          y2 = test1.y;
-          //
-          if (((x1 <= x) && (x <= x2)) || ((x2 <= x) && (x <= x1)))
-          {
-            if (abs(y - y1) < abs(y - y2))
-            {
-              recDistance = abs(y - y1);
-            }
-            else
-            {
-              recDistance = abs(y - y2);
-            }
-
-            if (recDistance < minDistance)
-            {
-              minDistance = recDistance;
-              closestPt = pt;
-            }
-          }
-          else if (((y1 <= y) && (y <= y2)) || ((y2 <= y) && (y <= y1)))
-          {
-            if (abs(x - x1) < abs(x - x2))
-            {
-              recDistance = abs(x - x1);
-            }
-            else
-            {
-              recDistance = abs(x - x2);
-            }
-
-            if (recDistance < minDistance)
-            {
-              minDistance = recDistance;
-              closestPt = pt;
-            }
-          }
-          else if ((((x < x1) && (x1 <= x2)) && ((y > y1) && (y1 >= y2))) ||
-                   (((x < x1) && (x1 <= x2)) && ((y < y1) && (y1 <= y2))) ||
-                   (((x > x1) && (x1 >= x2)) && ((y > y1) && (y1 >= y2))) ||
-                   (((x > x1) && (x1 >= x2)) && ((y < y1) && (y1 <= y2))))
-          {
-            recDistance = abs(x - x1) + abs(y - y1);
-
-            if (recDistance < minDistance)
-            {
-              minDistance = recDistance;
-              closestPt = pt;
-            }
-          }
-          else if ((((x < x2) && (x2 <= x1)) && ((y > y2) && (y2 >= y1))) ||
-                   (((x < x2) && (x2 <= x1)) && ((y < y2) && (y2 <= y1))) ||
-                   (((x > x2) && (x2 >= x1)) && ((y > y2) && (y2 >= y1))) ||
-                   (((x > x2) && (x2 >= x1)) && ((y < y2) && (y2 <= y1))))
-          {
-            recDistance = abs(x - x2) + abs(y - y2);
-
-            if (recDistance < minDistance)
-            {
-              minDistance = recDistance;
-              closestPt = pt;
-            }
-          }
-          else if ((((x < x2) && (x2 <= x1)) && ((y > y1) && (y1 >= y2))) ||
-                   (((x < x2) && (x2 <= x1)) && ((y < y1) && (y1 <= y2))) ||
-                   (((x > x2) && (x2 >= x1)) && ((y > y1) && (y1 >= y2))) ||
-                   (((x > x2) && (x2 >= x1)) && ((y < y1) && (y1 <= y2))))
-          {
-            recDistance = abs(x - x2) + abs(y - y1);
-
-            if (recDistance < minDistance)
-            {
-              minDistance = recDistance;
-              closestPt = pt;
-            }
-          }
-          else if ((((x < x1) && (x1 <= x2)) && ((y > y2) && (y2 >= y1))) ||
-                   (((x < x1) && (x1 <= x2)) && ((y < y2) && (y2 <= y1))) ||
-                   (((x > x1) && (x1 >= x2)) && ((y > y2) && (y2 >= y1))) ||
-                   (((x > x1) && (x1 >= x2)) && ((y < y2) && (y2 <= y1))))
-          {
-            recDistance = abs(x - x1) + abs(y - y2);
-
-            if (recDistance < minDistance)
-            {
-              minDistance = recDistance;
-              closestPt = pt;
-            }
-          }
-        }
+        break;
       }
-      // add closest point to MBB to the end of the temp list
-      newList[k + 2] = closestPt;
-    }
-    // once temp list is complete, copy it pins list for the net in the main routing instance
-    for (m = 0; m < rst->nets[i].numPins; m++)
-    {
-      rst->nets[i].pins[m].x = newList[m].x;
-      rst->nets[i].pins[m].y = newList[m].y;
+      shortestPath = 0x7fffffff;
+
+      for (int pin_itr = 0; pin_itr < rst->nets[net_itr].numPins + 1;)
+      {
+        if (pin_itr == rst->nets[net_itr].numPins)
+        {
+          // Update the temp Array with the points closest to MBB
+          tempArray[arr_itr + 2] = shortestPath_pC;
+          break;
+        }
+        flag = 0;
+        pC = rst->nets[net_itr].pins[pin_itr];
+
+        int itr = 0;
+
+        // Comparing the 2 points in the current MBB with pC.x and pC.y
+        temp0 = tempArray[arr_itr];
+        temp1 = tempArray[arr_itr + 1];
+
+        while ((itr - 2) != arr_itr)
+        {
+          if ((pC.x == tempArray[itr].x) && (pC.y == tempArray[itr].y))
+          {
+            flag = 1;
+            break;
+          }
+          itr++;
+          if ((itr - 2 == arr_itr) && !(flag))
+          {
+
+            MBB_x1 = temp0.x;
+            MBB_x2 = temp1.x;
+            MBB_y1 = temp0.y;
+            MBB_y2 = temp1.y;
+
+            if (((MBB_x1 <= pC.x) && (pC.x <= MBB_x2)) || ((MBB_x2 <= pC.x) && (pC.x <= MBB_x1)))
+            {
+              if (abs(pC.y - MBB_y1) < abs(pC.y - MBB_y2))
+              {
+                distToSteinerPt = abs(pC.y - MBB_y1);
+              }
+              else
+              {
+                distToSteinerPt = abs(pC.y - MBB_y2);
+              }
+
+              if (pin_itr == 0)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+              else if (distToSteinerPt < shortestPath)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+            }
+            else if (((MBB_y1 <= pC.y) && (pC.y <= MBB_y2)) || ((MBB_y2 <= pC.y) && (pC.y <= MBB_y1)))
+            {
+              if (abs(pC.x - MBB_x1) < abs(pC.x - MBB_x2))
+              {
+                distToSteinerPt = abs(pC.x - MBB_x1);
+              }
+              else
+              {
+                distToSteinerPt = abs(pC.x - MBB_x2);
+              }
+              if (pin_itr == 0)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+              else if (distToSteinerPt < shortestPath)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+            }
+            else if (
+                (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) ||
+                (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
+                (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) ||
+                (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))))
+            {
+              distToSteinerPt = abs(pC.x - MBB_x2) + abs(pC.y - MBB_y2);
+              if (pin_itr == 0)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+              else if (distToSteinerPt < shortestPath)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+            }
+            else if (
+                (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
+                (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
+                (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
+                (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))))
+            {
+              distToSteinerPt = abs(pC.x - MBB_x1) + abs(pC.y - MBB_y1);
+              if (pin_itr == 0)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+              else if (distToSteinerPt < shortestPath)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+            }
+
+            else if ((((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
+                     (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
+                     (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
+                     (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2)))
+
+            )
+            {
+              distToSteinerPt = abs(pC.x - MBB_x2) + abs(pC.y - MBB_y1);
+              if (pin_itr == 0)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+              else if (distToSteinerPt < shortestPath)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+            }
+            else if ((((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
+                     (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) || (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
+                     (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))))
+            {
+              distToSteinerPt = abs(pC.x - MBB_x1) + abs(pC.y - MBB_y2);
+              if (pin_itr == 0)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+              else if (distToSteinerPt < shortestPath)
+              {
+                shortestPath = distToSteinerPt;
+                shortestPath_pC.x = pC.x;
+                shortestPath_pC.y = pC.y;
+              }
+            }
+          }
+        }
+        pin_itr++;
+      }
     }
   }
-  free(newList);
 }
 
-/* reads in the two endpoints of an edge
- * and updates edgeCaps. sets other
- * capacities to default value read in
- *
- * mallocs edgeCaps
- *
- * returns:
- * EXIT_FAILURE on fail
- * EXIT_SUCCESS on pass
- */
-int readBlockages(FILE *fp, routingInst *rst)
-{
-  int i;
-  int numBlock;
-  int newCap;
-
-  point p1, p2;
-
-  if (fp == NULL || rst == NULL)
-  {
-    fprintf(stderr, "Null args passed to readBlockages.\n");
-    return EXIT_FAILURE;
-  }
-
-  /* number of Blockages */
-  if (fscanf(fp, "%d ", &numBlock) != 1)
-  {
-    fprintf(stderr, "Failed to read # of blockages.\n");
-    return EXIT_FAILURE;
-  }
-
-  /* read blockages from file, set appropiate edge to 0 */
-  for (i = 0; i < numBlock; i++)
-  {
-    /* read terminal locations */
-    if (fscanf(fp, "%d %d %d %d ", &p1.x, &p1.y, &p2.x, &p2.y) != 4)
-    {
-      fprintf(stderr, "Couldn't read blockage endpoints.\n");
-      return EXIT_FAILURE;
-    }
-
-    if (fscanf(fp, "%d ", &newCap) != 1)
-    {
-      fprintf(stderr, "Couldn't read blockage capacity.\n");
-      return EXIT_FAILURE;
-    }
-
-    int ID = getEdgeID(rst, p1.x, p1.y, p2.x, p2.y);
-    rst->edgeCaps[ID - 1] = newCap;
-  }
-
-  return EXIT_SUCCESS;
-}
 
 void printRoutingInst(routingInst rst)
 {
@@ -749,188 +823,215 @@ int solveRouting(routingInst *rst)
   return EXIT_SUCCESS;
 }
 
-int writeOutput(const char *outRouteFile, routingInst *rst)
-{
-  int i, j, k;
-  point p1, p2;
+/* int writeOutput(const char *outRouteFile, routingInst *rst)
+   Write the routing solution obtained from solveRouting(). 
+   Refer to the project link for the required output format.
+
+   Finally, make sure your generated output file passes the evaluation script to make sure
+   it is in the correct format and the nets have been correctly routed. The script also reports
+   the total wirelength and overflow of your routing solution.
+
+   input1: name of the output file
+   input2: pointer to the routing instance
+   output: 1 if successful, 0 otherwise 
+  */
+
+int writeOutput(const char *outRouteFile, routingInst *rst){
+  int net_iter, seg_iter, edge_iter;
+
+  // deltas
   int dxprev, dyprev, dx, dy;
+
+  // how many flats in a row, either vertical or horiz
+  int numflats = 0;
+
+  // bends in seg
+  int numBends = 0;
+  FILE* fp;
+
+  // CURRENT POINTS
+  point p1, p2;
+  // PREV POINTS
   point p1prev, p2prev;
-  FILE *fp;
+
+  if (!(fp = fopen(outRouteFile, "w")))
+  {
+    perror("Error opening file");
+    return 0;
+  }
 
   /* check input parameters */
-  if (outRouteFile == NULL || rst == NULL)
+  if( outRouteFile == NULL || rst == NULL )
   {
-    fprintf(stderr, "Passed null arg into writeOutput.\n");
-    return EXIT_FAILURE;
+    printf("File name is NULL, ending.\n");
+    return 0;
+  }
+  
+  if(fp == NULL)
+  {
+    printf("Output file could not be created.\n");
+    return 0;
   }
 
-  fp = fopen(outRouteFile, "w");
-  if (fp == NULL)
-  {
-    fprintf(stderr, "Output file could not be created.\n");
-    return EXIT_FAILURE;
-  }
-
-  /* initialize stored points */
+  // we store previous points to help us navigate the segment
   p1prev.x = 0;
-  p1prev.y = 0;
+  p1prev.y = 0; 
   p2prev.x = 0;
   p2prev.y = 0;
 
-  /* for all nets in rst,
-   * go through route  segments - for all segments,
-   * go through all edges, printing out the corresponding pts */
-  for (i = 0; i < rst->numNets; i++)
+  for(net_iter= 0; net_iter < rst->numNets; net_iter++)
   {
-    fprintf(fp, "n%d\n", rst->nets[i].id);
+    //fprintf(file, "%s%d\n", "n", i);
+    fprintf(fp, "n%d\n", rst->nets[net_iter].id);
 
-    for (j = 0; j < rst->nets[i].nroute.numSegs; j++)
+    for(seg_iter = 0; seg_iter < rst->nets[net_iter].nroute.numSegs; seg_iter++)
     {
 
-      for (k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++)
+      for(edge_iter= 0; edge_iter< rst->nets[net_iter].nroute.segments[seg_iter].numEdges; edge_iter++)
       {
-        getEdgePts(rst, rst->nets[i].nroute.segments[j].edges[k], &p1, &p2);
-
-        /*special case where only one edge - print edge*/
-        if (rst->nets[i].nroute.segments[j].numEdges == 1)
+        getEdgePts(rst, rst->nets[net_iter].nroute.segments[seg_iter].edges[edge_iter],&p1, &p2);
+    
+        //special case where only one edge exists int he seg
+        //just print that edge and exit
+        if(rst->nets[net_iter].nroute.segments[seg_iter].numEdges == 1)
         {
           fprintf(fp, "(%d,%d)-(%d,%d)\n", p1.x, p1.y, p2.x, p2.y);
         }
-
-        /*if first edge in segment, set this edge as the longest flat path*/
-        if (k == 0)
+        
+        //if first edge in segment, set this edge as the longest flat path
+        if(edge_iter==0)
         {
           p1prev = p1;
           p2prev = p2;
+          // subbing p1 from p2
           dxprev = abs(p2.x - p1.x);
-          dyprev = abs(p2.y - p1.y);
-        }
-        else
+          dyprev = abs(p2.y - p1.y);    
+          numflats = numflats + 1;  
+        } 
+
+        else 
         {
           dx = abs(p2.x - p1.x);
           dy = abs(p2.y - p1.y);
-
-          /* horizontal path, new edge also horizontal
-           * update path end point and continue */
-          if ((dxprev > 0) && (dx > 0))
+          
+          // Horizontal portion old and new, as delta in x's
+          if((dxprev > 0) && (dx > 0))
           {
-            if (p1prev.x == p2.x)
+            numflats = numflats + 1;
+            if(p1prev.x == p2.x)
             {
               p1prev = p1;
             }
-            else if (p1prev.x == p1.x)
+            else if(p1prev.x == p1.x)
             {
-              p1prev = p2;
+              p1prev = p2; 
             }
-            else if (p2prev.x == p2.x)
+            else if(p2prev.x == p2.x)
             {
-              p2prev = p1;
+              p2prev = p1; 
             }
-            else if (p2prev.x == p1.x)
+            else if(p2prev.x == p1.x)
             {
-              p2prev = p2;
+              p2prev = p2; 
             }
-            /*if last edge in segment, print*/
-            if (k == (rst->nets[i].nroute.segments[j].numEdges - 1))
+            // last means print
+            if(edge_iter == (rst->nets[net_iter].nroute.segments[seg_iter].numEdges -1))
             {
               fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             }
           }
-          /* horizontal path, new edge vertical (bend)
-           * print previous path and set edge as new path */
-          else if ((dxprev > 0) && (dy > 0))
+          // old was horiz and new is vertical
+          else if((dxprev > 0) && (dy > 0))
           {
+            numBends = numBends + 1;
             fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             p1prev = p1;
             p2prev = p2;
             dxprev = abs(p2.x - p1.x);
             dyprev = abs(p2.y - p1.y);
-
-            /* if last edge in segment, print */
-            if (k == (rst->nets[i].nroute.segments[j].numEdges - 1))
+            
+            // last means print
+            if(edge_iter== (rst->nets[net_iter].nroute.segments[seg_iter].numEdges -1))
             {
               fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             }
           }
-          /* vertical path, new edge vetical */
-          else if ((dyprev > 0) && (dy > 0))
+           // Vertical portion old and new, as delta in y's
+          else if((dyprev > 0) && (dy > 0))
           {
-            if (p1prev.y == p2.y)
+            numflats = numflats + 1;
+            if(p1prev.y == p2.y)
             {
               p1prev = p1;
             }
-            else if (p1prev.y == p1.y)
+            else if(p1prev.y == p1.y)
             {
-              p1prev = p2;
+              p1prev = p2; 
             }
-            else if (p2prev.y == p2.y)
+            else if(p2prev.y == p2.y)
             {
-              p2prev = p1;
+              p2prev = p1; 
             }
-            else if (p2prev.y == p1.y)
+            else if(p2prev.y == p1.y)
             {
-              p2prev = p2;
+              p2prev = p2; 
             }
-            /* if last edge in segment, print */
-            if (k == (rst->nets[i].nroute.segments[j].numEdges - 1))
+            // last means print
+            if(edge_iter == (rst->nets[net_iter].nroute.segments[seg_iter].numEdges -1))
             {
               fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             }
           }
-          /* vertical path, new edge horizontal(bend) */
-          else if ((dyprev > 0) && (dx > 0))
+          // old was vert and new is horiz
+          else if((dyprev > 0) && (dx > 0))
           {
+            numBends = numBends + 1;
             fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             p1prev = p1;
             p2prev = p2;
             dxprev = abs(p2.x - p1.x);
             dyprev = abs(p2.y - p1.y);
-
-            /* if last edge in segment, print */
-            if (k == (rst->nets[i].nroute.segments[j].numEdges - 1))
+            
+            // last means print
+            if(edge_iter== (rst->nets[net_iter].nroute.segments[seg_iter].numEdges -1))
             {
               fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             }
-          }
+          } 
         }
       }
     }
 
     fprintf(fp, "!\n");
   }
-
-  return EXIT_SUCCESS;
+  
+  return 1;
 }
 
 int release(routingInst *rst)
 {
+  /*********** TO BE FILLED BY YOU **********/
+  //
+  //
 
-  int i, j;
+  rst->cap = 0;
+  rst->numEdges = 0;
+  rst->gx = 0;
+  rst->gy = 0;
 
-  /* Must free all dynamically allocated memory from
-   * routingInst.  This could include the following:
-   * rst->edgeUtils
-   * rst->edgeCaps
-   * rst->nets
-   *  nets[i].pins
-   *  nets[i].route.segments
-   *    nets[i].route.segments[j].edges
-   */
+  free(rst->edgeCaps);
+  rst->edgeCaps = NULL;
 
-  if (rst == NULL)
-  {
-    fprintf(stderr, "Null arg passed into release.\n");
-    return EXIT_FAILURE;
-  }
+  free(rst->edgeUtils);
+  rst->edgeUtils = NULL;
 
-  /* free bottom up, starting with edges */
   if (rst->nets != NULL)
   {
-    for (i = 0; i < rst->numNets; i++)
+    for (int i = 0; i < rst->numNets; i++)
     {
       if (rst->nets[i].nroute.segments != NULL)
       {
-        for (j = 0; j < rst->nets[i].nroute.numSegs; j++)
+        for (int j = 0; j < rst->nets[i].nroute.numSegs; j++)
         {
           free(rst->nets[i].nroute.segments[j].edges);
         }
@@ -940,13 +1041,13 @@ int release(routingInst *rst)
       free(rst->nets[i].pins);
     }
   }
+
+  rst->numNets = 0;
   free(rst->nets);
+  rst->nets = NULL;
+  // free(rst->nets->nroute.segments)
 
-  /* other memory in routingInst */
-  free(rst->edgeCaps);
-  free(rst->edgeUtils);
-
-  return EXIT_SUCCESS;
+  return 1;
 }
 
 int releaseSegsAndEdges(routingInst *rst)
