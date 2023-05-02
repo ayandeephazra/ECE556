@@ -149,12 +149,6 @@ int solveRoutingAstar(routingInst *rst);
  // used to release allocated memory for segments and edges between RRR iterations
 int releaseSegsAndEdges(routingInst *rst);
 
-
-/* prints out information about routing instance..
- * mainly for checking file read
- */
-void printRoutingInst(routingInst rst);
-
 /* void subnetGen(routingInst *rst)
    This function creates an optimized subnet before the initial
    basic solverouting is run.

@@ -467,31 +467,7 @@ void subnetGen(routingInst *rst)
   }
 }
 
-void printRoutingInst(routingInst rst)
-{
-  int i, j;
-  printf("*******routingInst info************\n");
-  printf("numNets: %d\n", rst.numNets);
-  for (i = 0; i < rst.numNets; i++)
-  {
-    printf("\n>n%d\n", rst.nets[i].id);
-    printf("->numPins: %d\n", rst.nets[i].numPins);
-    for (j = 0; j < rst.nets[i].numPins; j++)
-    {
-      printf("--> (%d, %d)\n", rst.nets[i].pins[j].x, rst.nets[i].pins[j].y);
-    }
-  }
-}
 
-/* This function calculates the integer edge ID for an edge.
- * the edge id is determined as follows for a 3x3 grid
- *
- *  + 5 + 6 +
- *  8   10  12
- *  + 3 + 4 +
- *  7   9   11
- *  + 1 + 2 +
- */
 int getEdgeID(routingInst *rst, int x1, int y1, int x2, int y2)
 {
   /* determine if horiz or vertical */
@@ -518,11 +494,6 @@ int getEdgeID(routingInst *rst, int x1, int y1, int x2, int y2)
 }
 
 
-
-/* this function takes in an edge id, and fills in the passed
- * in points with the edge points.  It follows the same numbering
- * described above for getEdgeID
- */
 
 int NumEdges(int p1_x, int p1_y, int p2_x, int p2_y)
 {
@@ -556,16 +527,16 @@ int solveRouting(routingInst *rst)
     for (auto seg_itr = 0; seg_itr != rst->nets[net_itr].nroute.numSegs; seg_itr++)
     {
 
-      rst->nets[net_itr].nroute.segments[seg_itr].p1 = rst->nets[net_itr].pins[seg_itr];
-      rst->nets[net_itr].nroute.segments[seg_itr].p2 = rst->nets[net_itr].pins[seg_itr + 1];
+      pin_num = seg_itr;
+      rst->nets[net_itr].nroute.segments[seg_itr].p1.x = rst->nets[net_itr].pins[pin_num].x;   /* x coordinate of start point p1( >=0 in the routing grid)*/
+      rst->nets[net_itr].nroute.segments[seg_itr].p1.y = rst->nets[net_itr].pins[pin_num].y; /* y coordinate of end point p1  ( >=0 in the routing grid)*/
+      rst->nets[net_itr].nroute.segments[seg_itr].p2.x = rst->nets[net_itr].pins[pin_num+1].x;   /* x coordinate of start point p2( >=0 in the routing grid)*/
+      rst->nets[net_itr].nroute.segments[seg_itr].p2.y = rst->nets[net_itr].pins[pin_num+1].y;   /* y coordinate of end point p2  ( >=0 in the routing grid)*/
 
+      /* number of edges in the segment*/
       x_diff = rst->nets[net_itr].pins[seg_itr + 1].x - rst->nets[net_itr].pins[seg_itr].x;
       y_diff = rst->nets[net_itr].pins[seg_itr + 1].y - rst->nets[net_itr].pins[seg_itr].y;
 
-      rst->nets[net_itr].nroute.segments[seg_itr].p1 = p1; /* start point of current segment */
-      rst->nets[net_itr].nroute.segments[seg_itr].p2 = p2; /* end point of current segment */
-
-      /* number of edges in the segment*/
       rst->nets[net_itr].nroute.segments[seg_itr].numEdges = abs(x_diff) + abs(y_diff);
 
       /* array of edges representing the segment*/
