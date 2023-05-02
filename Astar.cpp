@@ -16,40 +16,6 @@ int Node_init(Node_ *N)
   return 1;
 }
 
-/*
-void Node1(Node *n)
-{
-  Node->G = -1;
-  Node->F = -1;
-  Node->edgeCap = 0;
-  Node->edgeUtil = 0;
-  Node->distToT = -1;
-  Node->distFromS = -1;
-  Node->edgeID = 0;
-  Node->loc->x = -1;
-  Node->loc->y = -1;
-}
-
-*/
-
-/*
-bool CompareNodeCost(Node_ *n1, Node_ *n2)
-{
-  // returns true if e2 has less cost than e1
-  return (n1->F > n2->F);
-}
-
-int PointHash(point *pt, routingInst *rst)
-{
-  return (pt->y + (rst->gy * pt->x));
-}
-*/
-
-/* this version of solveRoutingAstar is based off of wikipedia's pseudocode
- * which assumes that nodes can't be reopened from the closedSet.  Since the
- * heuristic we use will potentially have lower cost with a different path
- * to the node, we are removing this complexity in this version.
- */
 
 int solveRoutingAstar(routingInst *rst)
 {

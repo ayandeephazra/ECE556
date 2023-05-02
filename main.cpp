@@ -52,6 +52,11 @@ int main(int argc, char **argv)
 	/// create a new routing instance
 	routingInst *rst = new routingInst;
 
+	rst->edgeUtils = NULL;
+	rst->edgeCaps = NULL;
+	rst->nets = NULL;
+	rst->numNets = 0;
+
 	/// read benchmark
 	status = readBenchmark(inputFileName, rst);
 	if (status == 0)
@@ -59,19 +64,9 @@ int main(int argc, char **argv)
 		printf("ERROR: reading input file \n");
 		return 1;
 	}
+	printf("SUCCESS: finished reading input benchmark\n");
 
-	/// run SUBNET gen
-	if (enable_subnet_gen)
-	{
-		subnetGen(rst);
-	}
-	/*if(status==0){
-		printf("ERROR: running routing \n");
-		release(rst);
-		return 1;
-	}
-	*/
-	/// run actual routing
+		/// run actual routing
 	status = solveRouting(rst);
 	if (status == 0)
 	{
@@ -80,15 +75,33 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	/// RRR
-	if(enable_net_order_and_rrr){
-		status = rrr(rst);
-	}
-	if (status == 0)
+	/// run SUBNET gen
+	if (enable_subnet_gen)
 	{
-		printf("ERROR: in RRR except not in A star or quicksort \n");
+		subnetGen(rst);
+		printf("Done with subnet generation \n");
+	}
+	/*if(status==0){
+		printf("ERROR: running routing \n");
 		release(rst);
 		return 1;
+	}
+	*/
+
+	else{
+	printf("SUCCESS: finished running initial routing\n");
+	}
+
+	/// RRR
+	if (enable_net_order_and_rrr)
+	{
+		status = rrr(rst);
+		if (status == 0)
+		{
+			printf("ERROR: in RRR except not in A star or quicksort \n");
+			release(rst);
+			return 1;
+		}
 	}
 
 	/// write the result

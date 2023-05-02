@@ -1,0 +1,3 @@
+get object -> g++ -g -o main main.cpp  ece556.cpp quicksort_dec.cpp quicksort_dec.h ece556.h 
+
+valgrind -> valgrind --leak-check=yes -s ./main

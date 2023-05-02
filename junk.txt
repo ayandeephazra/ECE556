@@ -92,3 +92,25 @@
       }
     }
     */
+
+
+    int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
+{
+  // edge_params *edge_params_ = (edge_params *)malloc(rst->numEdges * sizeof(edge_params));
+
+  for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
+  {
+    if (rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id] > 0)
+    {
+      edge_params_[edge_id].edgeOverflows = rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id];
+    }
+    else
+    {
+      edge_params_[edge_id].edgeOverflows = 0;
+    }
+  }
+  return 1;
+}
+
+edge utils
+termination should just be time based?

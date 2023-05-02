@@ -9,7 +9,7 @@
 #include <fstream>
 #include <iostream>
 
-//using namespace std;
+// using namespace std;
 
 typedef struct
 {
@@ -151,8 +151,8 @@ int readBenchmark(const char *fileName, routingInst *rst)
 
   blockage *blockage_ = (blockage *)malloc(num_blockages * sizeof(blockage));
 
-  rst->edgeCaps = (int *)malloc(rst->numEdges * sizeof(int *));
-  rst->edgeUtils = (int *)malloc(rst->numEdges * sizeof(int *));
+  rst->edgeCaps = (int *)malloc(rst->numEdges * sizeof(int));
+  rst->edgeUtils = (int *)malloc(rst->numEdges * sizeof(int));
   // rst->cap = 1; // change as instructed
 
   for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
@@ -582,63 +582,77 @@ int solveRouting(routingInst *rst)
 
 int computeEdgeUtilizations(routingInst *rst)
 {
+  printf("\n\n\n%d", 13);
 
-  for (int net_id = 0; net_id < rst->numNets; net_id++)
+  for (int net_id = 0; net_id < (rst->numNets - 1); net_id++)
   {
+    // printf("\n\n\nijwvjwsvijwvjiwj %d", net_id);
 
-    for (int seg_id = 0; seg_id < rst->nets[net_id].nroute.numSegs; seg_id++)
+    for (int seg_id = 0; seg_id < (rst->nets[net_id].nroute.numSegs - 1); seg_id++)
     {
+      // printf("\n\n\n pppppp");
 
-      for (int edge_id = 0; edge_id < rst->nets[net_id].nroute.segments[seg_id].numEdges; edge_id++)
+      for (int edge_iter = 0; edge_iter < rst->nets[net_id].nroute.segments[seg_id].numEdges; edge_iter++)
       {
+        // printf("\n\n\n qqqqqqq");
 
-        int edge_in_question = rst->nets[net_id].nroute.segments[seg_id].edges[edge_id];
+        int edge_in_question = rst->nets[net_id].nroute.segments[seg_id].edges[edge_iter];
+
+        // rst->edgeUtils[edge_in_question]++;
+
         // defaulted to zero, so just incremenent whenever there's a match
-        rst->edgeUtils[edge_in_question - 1]++;
+        if (edge_in_question <= rst->numEdges)
+        {
+          // printf("\n\nBBBBBBBBBBBBBBBBBBBBBBBB");
+          rst->edgeUtils[edge_in_question - 1] = rst->edgeUtils[edge_in_question - 1] + 1;
+        }
+        else
+        {
+          printf("\n\n\n %d", edge_in_question);
+        }
       }
     }
   }
+  // printf("\n\n\n ijwvjwsvijwvjiwj");
+
   return 1;
 }
-
-int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
-{
-  // edge_params *edge_params_ = (edge_params *)malloc(rst->numEdges * sizeof(edge_params));
-
-  for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
-  {
-    if (rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id] > 0)
-    {
-      edge_params_[edge_id].edgeOverflows = rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id];
-    }
-    else
-    {
-      edge_params_[edge_id].edgeOverflows = 0;
-    }
-  }
-  return 1;
-}
-
 
 int rrr(routingInst *rst)
 {
 
   // edge Utilization calculation, edgeUtils
-  computeEdgeUtilizations(rst);
+  int status = computeEdgeUtilizations(rst);
+  if (status != 1)
+  {
+    printf("ERROR: in compute Edge Utilizations \n");
+    release(rst);
+    return 1;
+  }
+  printf("SUCCESS: Done computing Edge Utilizations \n");
 
   bool terminate = false;
   int loop_var = 1;
   edge_params *edge_params_ = (edge_params *)malloc(rst->numEdges * sizeof(edge_params));
+  for (int i = 0; i < rst->numNets; i++)
+  {
+    edge_params_->edgeHistories = 0;
+    edge_params_->edgeOverflows = 0;
+    edge_params_->edgeWeights = 0;
+  }
 
   int *cost_array;
   cost_array = (int *)malloc(rst->numNets * sizeof(int));
   // default cost array to 0
   for (int i = 0; i < rst->numNets; i++)
   {
+    printf("numNets %d\n", i);
     cost_array[i] = 0;
   }
 
   sorted_cost_dict *scd_ = (sorted_cost_dict *)malloc(rst->numNets * sizeof(sorted_cost_dict));
+
+  printf("numNets %d\n", 0);
 
   // sorted_cost_array = (int*)malloc(rst->numNets*sizeof(int));
 
@@ -647,15 +661,17 @@ int rrr(routingInst *rst)
   //                       R I P - U P - A N D - R E R O U T E   W H I L E   L O O P                                  //
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  while (!terminate) //!terminate & 
+  while (!terminate) //! terminate &
   {
+
     /* COMPUTING EDGE WEIGHTS*/
     if (loop_var == 1)
     {
       // history = 1 ffor all edges
 
-      for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
+      for (int edge_id = 0; edge_id < rst->numEdges - 1; edge_id++)
       {
+
         if (rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id] > 0)
         {
           edge_params_[edge_id].edgeOverflows = rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id];
@@ -675,8 +691,9 @@ int rrr(routingInst *rst)
     else
     {
 
-      for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
+      for (int edge_id = 0; edge_id < rst->numEdges - 1; edge_id++)
       {
+        printf("edge#1#  %d %d\n", loop_var, edge_id);
         if (rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id] > 0)
         {
           edge_params_[edge_id].edgeOverflows = rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id];
@@ -697,11 +714,11 @@ int rrr(routingInst *rst)
     }
 
     /* CALCULATE NET ORDERING */
-    for (int net_id = 0; net_id < rst->numNets; net_id++)
+    for (int net_id = 0; net_id < rst->numNets - 1; net_id++)
     {
-      for (int seg_id = 0; seg_id < rst->nets[net_id].nroute.numSegs; seg_id++)
+      for (int seg_id = 0; seg_id < rst->nets[net_id].nroute.numSegs - 1; seg_id++)
       {
-        for (int edge_id = 0; edge_id < rst->nets[net_id].nroute.segments[seg_id].numEdges; edge_id++)
+        for (int edge_id = 0; edge_id < rst->nets[net_id].nroute.segments[seg_id].numEdges - 1; edge_id++)
         {
           cost_array[net_id] = cost_array[net_id] + edge_params_[edge_id].edgeWeights;
         }
@@ -711,6 +728,7 @@ int rrr(routingInst *rst)
     /* default cost array to be exactly what cost_array is */
     for (int ele = 0; ele < rst->numNets; ele++)
     {
+      printf("edge#2# %d %d\n", loop_var, ele);
       scd_[ele].cost = cost_array[ele];
       scd_[ele].net_id = ele;
     }
@@ -718,23 +736,22 @@ int rrr(routingInst *rst)
     /* sort scd_ in nlogn */
     /* changes nets in rst too now*/
     quickSort_dec(0, rst->numNets - 1, scd_, rst);
-    
-    //solveRouting(rst);
+
+    // solveRouting(rst);
     /* A* */
-    int status = solveRoutingAstar(rst);
+    // int status = solveRoutingAstar(rst);
     /* TERMINATION CONDITION */
     // change value of terminate
-    if(loop_var == 500)
+    if (loop_var == 5)
     {
       terminate = true;
-      
     }
     else
     {
       loop_var++;
     }
     // increment loop_var
-    //loop_var++;
+    // loop_var++;
   }
   // free memory formerly declared
   free(scd_);
