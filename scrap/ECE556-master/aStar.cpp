@@ -1,4 +1,6 @@
 #include "aStar.h"
+#include "ece556.h"
+
 
 /* this version of solveRoutingAstar is based off of wikipedia's pseudocode
  * which assumes that nodes can't be reopened from the closedSet.  Since the

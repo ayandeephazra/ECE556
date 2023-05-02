@@ -91,7 +91,8 @@ struct point
    
   } routingInst ;
   
-
+int getEdgeID(routingInst *rst, int x1, int y1, int x2, int y2);
+int getEdgeID(routingInst *rst, point p1, point p2);
 /* int readBenchmark(const char *fileName, routingInst *rst)
    Read in the benchmark file and initialize the routing instance.
    This function needs to populate all fields of the routingInst structure.
@@ -162,8 +163,4 @@ void printRoutingInst(routingInst rst);
 */
 void subnetGen(routingInst *rst);
 
-/* made available only for testing */
-void getEdgePts(routingInst *rst, int edgeID, point *pt1, point *pt2);
-int getEdgeID(routingInst *rst, point p1, point p2);
-int getEdgeID(routingInst *rst, int x1, int y1, int x2, int y2);
 #endif // ECE556_H

@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 		status = solveRouting(rst);
     printf("Completed initial routing \n");
  
-   	if(status==EXIT_FAILURE){
+   	if(status==0){
    		printf("ERROR: initial solution fails \n");
    		release(rst);
    		return 1;
