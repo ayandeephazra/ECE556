@@ -1,7 +1,6 @@
 // ECE556 - Copyright 2014 University of Wisconsin-Madison.  All Rights Reserved.
 
 #include "ece556.h"
-//#include "lees.h"
 #include "aStar.h"
 #include "netOrdering.h"
 #include "computeEdgeWeights.h"
