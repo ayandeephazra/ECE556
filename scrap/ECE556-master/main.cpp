@@ -24,12 +24,11 @@ int shouldContinue(timeval startTime)
 	return true;
   }
 
-  // TODO more complex termination evaluation
 }
 
 int main(int argc, char **argv)
 {
-  // Store the time at start of execution
+
   timeval startTime;
   gettimeofday(&startTime, NULL);
 
@@ -188,9 +187,10 @@ int main(int argc, char **argv)
 			firstRun = 0;
 		}
 
+
 printf("totalCost = %d\nbestCost = %d\n", totalCost, bestCost);
 
-		if(bestCost <= totalCost){
+		if(bestCost <= totalCost & totalCost>0){
 			noChange += 1;
 		}
 

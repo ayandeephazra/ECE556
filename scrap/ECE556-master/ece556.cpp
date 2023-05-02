@@ -1057,7 +1057,7 @@ int releaseSegsAndEdges(routingInst *rst)
   if (rst == NULL)
   {
     fprintf(stderr, "Null arg passed into release.\n");
-    return EXIT_FAILURE;
+    return 0;
   }
 
   /* free bottom up, starting with edges */
@@ -1078,5 +1078,5 @@ int releaseSegsAndEdges(routingInst *rst)
     }
   }
 
-  return EXIT_SUCCESS;
+  return 1;
 }

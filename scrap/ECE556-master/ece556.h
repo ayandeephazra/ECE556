@@ -7,7 +7,7 @@
 #include <stdio.h>
 
 // terminate execution after this time (seconds)
-#define MAX_TIME 900
+#define MAX_TIME 60
 
  /**
   * A structure to represent a 2D Point. 

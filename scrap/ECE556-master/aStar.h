@@ -3,8 +3,6 @@
 
 #include "ece556.h"
 #include <type_traits>
-#include <cstdio>
-#include <cstdlib>
 #include <vector>
 #include <algorithm>
 #include <set>
@@ -12,23 +10,19 @@
 #include <unordered_map>
 #include <queue>
 #include <math.h>
+#include <cstdio>
+#include <cstdlib>
 
-/* parts of namespace used */
+
 using std::vector;
-using std::pair;
 using std::unordered_map;
 using std::priority_queue;
+using std::pair;
 
-
-
-
-//////////////////////////////////////////////////////////////////////////////
-/*                    Global                                                */
-//////////////////////////////////////////////////////////////////////////////
-/* constants to modify the relative effects 
- * of edgeUtil, and edgeCap
- */
-const double MAX_HEUR_COST = 20.0;
+// constants to modify the relative effects 
+// of edgeUtil, and edgeCap
+//
+const double MAX_HEUR_COST = 50.0;
 const double K_OVF_MULT = 1.0;
 const int K_EDGE_CAPS = 1;
 const int K_EDGE_UTIL = 1;
@@ -115,17 +109,7 @@ int PointHash::gy = 0;
 
 } //close namespace
 
-//////////////////////////////////////////////////////////////////////////////
-/*                    Function declarations                                 */
-//////////////////////////////////////////////////////////////////////////////
 
-/* Solves maze routing using the A*  algorithm.
- * Written in c++ using the STL priority queue.
- *
- * Returns:
- * EXIT_FAILURE  something went wrong
- * EXIT_SUCCESS  successfully routed
- */
 void calcF( Node& n ) ;
 void calcG( Node& n ) ;
 

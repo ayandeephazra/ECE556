@@ -61,7 +61,7 @@ ece556.o: ece556.cpp ece556.h aStar.h
 	/bin/rm -f ece556.o
 	$(CCC) $(CCFLAGS) ece556.cpp -c
 
-aStar.o: aStar.h aStar.h ece556.h
+aStar.o: aStar.cpp aStar.h ece556.h
 	/bin/rm -f aStar.o
 	$(CCC) $(CCFLAGS) aStar.cpp -c
 	
