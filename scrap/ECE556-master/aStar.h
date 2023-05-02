@@ -22,7 +22,7 @@ using std::pair;
 // constants to modify the relative effects 
 // of edgeUtil, and edgeCap
 //
-const double MAX_HEUR_COST = 50.0;
+const double MAX_HEUR_COST = 25.0;
 const double K_OVF_MULT = 1.0;
 const int K_EDGE_CAPS = 1;
 const int K_EDGE_UTIL = 1;

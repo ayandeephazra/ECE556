@@ -105,6 +105,7 @@ int readBenchmark(const char *fileName, routingInst *rst)
     char temp1[100], temp2[100];
 
     rst->nets[net_indx].id = net_indx;
+    rst->nets[net_indx].nroute.cost = 0;
     if ((sscanf(buffer, "%s %s\n", temp1, temp2) > 0))
     {
       rst->nets[net_indx].numPins = atoi(temp2);
