@@ -9,13 +9,12 @@
 #include <climits>
 using namespace std;
 
-void subnetGen(routingInst *rst);
-int getEdgeID(routingInst *rst, int x1, int y1, int x2, int y2);
 
+int getEdgeID(routingInst *rst, int x1, int y1, int x2, int y2);
 
 int getEdgeID(routingInst *rst, point p1, point p2)
 {
-  return getEdgeID(rst, p1.x, p1.y, p2.x, p2.y );
+  return getEdgeID(rst, p1.x, p1.y, p2.x, p2.y);
 }
 
 int readBenchmark(const char *fileName, routingInst *rst)
@@ -467,7 +466,6 @@ void subnetGen(routingInst *rst)
   }
 }
 
-
 int getEdgeID(routingInst *rst, int x1, int y1, int x2, int y2)
 {
   /* determine if horiz or vertical */
@@ -492,8 +490,6 @@ int getEdgeID(routingInst *rst, int x1, int y1, int x2, int y2)
     return (x1 + y1 * (rst->gx - 1));
   }
 }
-
-
 
 int NumEdges(int p1_x, int p1_y, int p2_x, int p2_y)
 {
@@ -528,10 +524,10 @@ int solveRouting(routingInst *rst)
     {
 
       pin_num = seg_itr;
-      rst->nets[net_itr].nroute.segments[seg_itr].p1.x = rst->nets[net_itr].pins[pin_num].x;   /* x coordinate of start point p1( >=0 in the routing grid)*/
-      rst->nets[net_itr].nroute.segments[seg_itr].p1.y = rst->nets[net_itr].pins[pin_num].y; /* y coordinate of end point p1  ( >=0 in the routing grid)*/
-      rst->nets[net_itr].nroute.segments[seg_itr].p2.x = rst->nets[net_itr].pins[pin_num+1].x;   /* x coordinate of start point p2( >=0 in the routing grid)*/
-      rst->nets[net_itr].nroute.segments[seg_itr].p2.y = rst->nets[net_itr].pins[pin_num+1].y;   /* y coordinate of end point p2  ( >=0 in the routing grid)*/
+      rst->nets[net_itr].nroute.segments[seg_itr].p1.x = rst->nets[net_itr].pins[pin_num].x;     /* x coordinate of start point p1( >=0 in the routing grid)*/
+      rst->nets[net_itr].nroute.segments[seg_itr].p1.y = rst->nets[net_itr].pins[pin_num].y;     /* y coordinate of end point p1  ( >=0 in the routing grid)*/
+      rst->nets[net_itr].nroute.segments[seg_itr].p2.x = rst->nets[net_itr].pins[pin_num + 1].x; /* x coordinate of start point p2( >=0 in the routing grid)*/
+      rst->nets[net_itr].nroute.segments[seg_itr].p2.y = rst->nets[net_itr].pins[pin_num + 1].y; /* y coordinate of end point p2  ( >=0 in the routing grid)*/
 
       /* number of edges in the segment*/
       x_diff = rst->nets[net_itr].pins[seg_itr + 1].x - rst->nets[net_itr].pins[seg_itr].x;
@@ -595,199 +591,184 @@ int solveRouting(routingInst *rst)
   return 1;
 }
 
-
-int writeOutput(const char *outRouteFile, routingInst *rst)
+void getEdgePts(routingInst *rst, int edgeID, point *pt1, point *pt2)
 {
+  int vEdgeID;
 
-  // deltas
-  int dxprev, dyprev, x_diff, y_diff;
-
-  // how many flats in a row, either vertical or horiz
-  int numflats = 0;
-
-  // bends in seg
-  int numBends = 0;
-  FILE *fp;
-
-  // CURRENT POINTS
-  point p1, p2;
-  // PREV POINTS
-  point p1prev, p2prev;
-
-  if (!(fp = fopen(outRouteFile, "w")))
+  vEdgeID = edgeID - (rst->gx - 1)*(rst->gy);
+  /* first determine the direction of the edge by its magnitude */
+  if( vEdgeID > 0 )
   {
-    perror("Error opening file");
-    return 0;
+    /* Vertical segment */
+    /* vEdgeId  = larger Y +  X * (rst->gy - 1) */ 
+    /* X = (int) vEdgeId / (rst->gy) */
+    pt1->x = (vEdgeID-1) / (rst->gy-1);
+    pt2->x = pt1->x;
+
+    pt2->y = vEdgeID - pt2->x * (rst->gy - 1);
+    pt1->y = pt2->y - 1;
+  }else
+  {
+    /* horizontal segment */
+    /* edgeID = larger X + Y * (rst->gx - 1)  */
+    pt1->y = (edgeID-1) / (rst->gx-1);
+    pt2->y = pt1->y;
+
+    pt2->x = edgeID - pt2->y * (rst->gx - 1);
+    pt1->x = pt2->x - 1;
   }
+}
+
+int writeOutput(const char *outRouteFile, routingInst *rst){
+  int i, j, k;
+  point p1, p2;
+  int dxprev, dyprev, dx, dy;
+  point p1prev, p2prev;
+  FILE* fp;
 
   /* check input parameters */
-  if (outRouteFile == NULL || rst == NULL)
+  if( outRouteFile == NULL || rst == NULL )
   {
-    printf("File name is NULL, ending.\n");
-    return 0;
+    fprintf(stderr, "Passed null arg into writeOutput.\n");
+    return EXIT_FAILURE;
   }
 
-  if (fp == NULL)
+  fp = fopen(outRouteFile, "w");
+  if(fp == NULL)
   {
-    printf("Output file could not be created.\n");
-    return 0;
+    fprintf(stderr, "Output file could not be created.\n");
+    return EXIT_FAILURE;
   }
-
-  // we store previous points to help us navigate the segment
+  
+  /* initialize stored points */
   p1prev.x = 0;
-  p1prev.y = 0;
+  p1prev.y = 0; 
   p2prev.x = 0;
   p2prev.y = 0;
-
-  for (auto net_iter = 0; net_iter != rst->numNets; net_iter++)
+  
+  /* for all nets in rst, 
+   * go through route  segments - for all segments,
+   * go through all edges, printing out the corresponding pts */
+  for(i = 0; i < rst->numNets; i++)
   {
-    fprintf(fp, "n%d\n", rst->nets[net_iter].id);
+    fprintf(fp, "n%d\n", rst->nets[i].id);
 
-    for (auto seg_iter = 0; seg_iter != rst->nets[net_iter].nroute.numSegs; seg_iter++)
+    for(j = 0; j < rst->nets[i].nroute.numSegs; j++)
     {
 
-      for (auto edge_iter = 0; edge_iter != rst->nets[net_iter].nroute.segments[seg_iter].numEdges; edge_iter++)
+      for(k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++)
       {
-
-        int vEdgeID = rst->nets[net_iter].nroute.segments[seg_iter].edges[edge_iter] - (rst->gx - 1) * (rst->gy);
-        /* first determine the direction of the edge by its magnitude */
-        if (vEdgeID > 0)
-        {
-          /* Vertical segment */
-          /* vEdgeId  = larger Y +  X * (rst->gy - 1) */
-          /* X = (int) vEdgeId / (rst->gy) */
-          p1.x = (vEdgeID - 1) / (rst->gy - 1);
-          p2.x = p1.x;
-
-          p2.y = vEdgeID - p2.x * (rst->gy - 1);
-          p1.y = p2.y - 1;
-        }
-        else
-        {
-          /* horizontal segment */
-          /* edgeID = larger X + Y * (rst->gx - 1)  */
-          p1.y = (rst->nets[net_iter].nroute.segments[seg_iter].edges[edge_iter] - 1) / (rst->gx - 1);
-          p2.y = p1.y;
-
-          p2.x = rst->nets[net_iter].nroute.segments[seg_iter].edges[edge_iter] - p2.y * (rst->gx - 1);
-          p1.x = p2.x - 1;
-        }
-
-        // special case where only one edge exists int he seg
-        // just print that edge and exit
-        if (rst->nets[net_iter].nroute.segments[seg_iter].numEdges == 1)
+        getEdgePts(rst, rst->nets[i].nroute.segments[j].edges[k],&p1, &p2);
+    
+        /*special case where only one edge - print edge*/
+        if(rst->nets[i].nroute.segments[j].numEdges == 1)
         {
           fprintf(fp, "(%d,%d)-(%d,%d)\n", p1.x, p1.y, p2.x, p2.y);
         }
-
-        // if first edge in segment, set this edge as the longest flat path
-        if (edge_iter == 0)
+        
+        /*if first edge in segment, set this edge as the longest flat path*/
+        if(k==0)
         {
           p1prev = p1;
           p2prev = p2;
-          // subbing p1 from p2
           dxprev = abs(p2.x - p1.x);
-          dyprev = abs(p2.y - p1.y);
-          numflats = numflats + 1;
-        }
-
-        else
+          dyprev = abs(p2.y - p1.y);      
+        } 
+        else 
         {
-          x_diff = abs(p2.x - p1.x);
-          y_diff = abs(p2.y - p1.y);
-
-          // Horizontal portion old and new, as delta in x's
-          if ((dxprev > 0) && (x_diff > 0))
+          dx = abs(p2.x - p1.x);
+          dy = abs(p2.y - p1.y);
+          
+          /* horizontal path, new edge also horizontal
+           * update path end point and continue */
+          if((dxprev > 0) && (dx > 0))
           {
-            numflats = numflats + 1;
-            if (p1prev.x == p2.x)
+            if(p1prev.x == p2.x)
             {
               p1prev = p1;
             }
-            else if (p1prev.x == p1.x)
+            else if(p1prev.x == p1.x)
             {
-              p1prev = p2;
+              p1prev = p2; 
             }
-            else if (p2prev.x == p2.x)
+            else if(p2prev.x == p2.x)
             {
-              p2prev = p1;
+              p2prev = p1; 
             }
-            else if (p2prev.x == p1.x)
+            else if(p2prev.x == p1.x)
             {
-              p2prev = p2;
+              p2prev = p2; 
             }
-            // last means print
-            if (edge_iter == (rst->nets[net_iter].nroute.segments[seg_iter].numEdges - 1))
+            /*if last edge in segment, print*/
+            if(k == (rst->nets[i].nroute.segments[j].numEdges -1))
             {
               fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             }
           }
-          // old was horiz and new is vertical
-          else if ((dxprev > 0) && (y_diff > 0))
+          /* horizontal path, new edge vertical (bend)
+           * print previous path and set edge as new path */
+          else if((dxprev > 0) && (dy > 0))
           {
-            numBends = numBends + 1;
             fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             p1prev = p1;
             p2prev = p2;
             dxprev = abs(p2.x - p1.x);
             dyprev = abs(p2.y - p1.y);
-
-            // last means print
-            if (edge_iter == (rst->nets[net_iter].nroute.segments[seg_iter].numEdges - 1))
+            
+            /* if last edge in segment, print */
+            if(k == (rst->nets[i].nroute.segments[j].numEdges -1))
             {
               fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             }
           }
-          // Vertical portion old and new, as delta in y's
-          else if ((dyprev > 0) && (y_diff > 0))
+          /* vertical path, new edge vetical */
+          else if((dyprev > 0) && (dy > 0))
           {
-            numflats = numflats + 1;
-            if (p1prev.y == p2.y)
+            if(p1prev.y == p2.y)
             {
               p1prev = p1;
             }
-            else if (p1prev.y == p1.y)
+            else if(p1prev.y == p1.y)
             {
-              p1prev = p2;
+              p1prev = p2; 
             }
-            else if (p2prev.y == p2.y)
+            else if(p2prev.y == p2.y)
             {
-              p2prev = p1;
+              p2prev = p1; 
             }
-            else if (p2prev.y == p1.y)
+            else if(p2prev.y == p1.y)
             {
-              p2prev = p2;
+              p2prev = p2; 
             }
-            // last means print
-            if (edge_iter == (rst->nets[net_iter].nroute.segments[seg_iter].numEdges - 1))
+            /* if last edge in segment, print */
+            if(k == (rst->nets[i].nroute.segments[j].numEdges -1))
             {
               fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             }
           }
-          // old was vert and new is horiz
-          else if ((dyprev > 0) && (x_diff > 0))
+          /* vertical path, new edge horizontal(bend) */
+          else if((dyprev > 0) && (dx > 0))
           {
-            numBends = numBends + 1;
             fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             p1prev = p1;
             p2prev = p2;
             dxprev = abs(p2.x - p1.x);
             dyprev = abs(p2.y - p1.y);
-
-            // last means print
-            if (edge_iter == (rst->nets[net_iter].nroute.segments[seg_iter].numEdges - 1))
+            
+            /* if last edge in segment, print */
+            if(k == (rst->nets[i].nroute.segments[j].numEdges -1))
             {
               fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
             }
-          }
+          } 
         }
       }
     }
 
     fprintf(fp, "!\n");
   }
-
-  return 1;
+  
+  return EXIT_SUCCESS;
 }
 
 int release(routingInst *rst)

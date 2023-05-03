@@ -136,6 +136,8 @@ int retrace(routingInst *rst, Node* nS, Node* current, int netInd, int segInd) ;
 
 int solveRoutingAstar(routingInst *rst);
 
+void computeEdgeWeights(routingInst* rst, vector<int>& edgeOverflow, vector<int>& edgeWeight, vector<int>& edgeHistory);
+
 int routeNetAstar(routingInst *rst,int ,int ,int);
 
 //returns the manhattan distance between 2 nodes

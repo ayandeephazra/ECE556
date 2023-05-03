@@ -102,7 +102,8 @@ int getEdgeID(routingInst *rst, point p1, point p2);
 */
 int readBenchmark(const char *fileName, routingInst *rst);
 
-  
+void subnetGen(routingInst *rst);
+
 /* int solveRouting(routingInst *rst)
    This function creates a routing solution
    input: pointer to the routing instance

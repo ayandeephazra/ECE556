@@ -244,6 +244,31 @@ int m_dist( const Node& n1, const Node& n2)
   return abs(n1.loc.x - n2.loc.x) + abs(n1.loc.y - n2.loc.y);
 }
 
+void computeEdgeWeights(routingInst* rst, vector<int>& edgeOverflow, vector<int>& edgeWeight, vector<int>& edgeHistory){
+
+	int temp = 0;
+
+	for(int i = 0; i <= ((rst->numNets)-1); i++){
+		for(int j=0; j <= ((rst->nets[i].nroute.numSegs)-1); j++){ //for each segment in the net
+			for(int k=0; k <= ((rst->nets[i].nroute.segments[j].numEdges)-1); k++){ //for each edge in the segment
+				//parst3: compute overflow for each edge in route
+				temp = rst->nets[i].nroute.segments[j].edges[k]; //get edge number
+				//edgeOverflow[temp-1] = rst->edgeUtils[temp-1] - rst->edgeCaps[temp-1];
+				edgeOverflow.at(temp-1) = rst->edgeUtils[temp-1] - rst->edgeCaps[temp-1];
+				if(edgeOverflow.at(temp-1) < 0){
+					edgeOverflow.at(temp-1) = 0;
+				}
+				//part4: compute weight for each edge in route
+				if(edgeOverflow.at(temp-1) > 0){ //compute edge history
+					edgeHistory.at(temp-1) +=1;
+				}
+				edgeWeight.at(temp-1) = edgeOverflow.at(temp-1) * edgeHistory.at(temp-1);
+				//part 5: total edge weights in route
+				rst->nets[i].nroute.cost += edgeWeight.at(temp-1);
+			}
+		}
+	}
+}
 void getNeighbors(routingInst *rst, vector<Node>& neighbors,
                     Node* current, Node T)
 {
