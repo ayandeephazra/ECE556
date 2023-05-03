@@ -630,14 +630,14 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
   if( outRouteFile == NULL || rst == NULL )
   {
     fprintf(stderr, "Passed null arg into writeOutput.\n");
-    return EXIT_FAILURE;
+    return 0;
   }
 
   fp = fopen(outRouteFile, "w");
   if(fp == NULL)
   {
     fprintf(stderr, "Output file could not be created.\n");
-    return EXIT_FAILURE;
+    return 0;
   }
   
   /* initialize stored points */
@@ -768,7 +768,7 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
     fprintf(fp, "!\n");
   }
   
-  return EXIT_SUCCESS;
+  return 1;
 }
 
 int release(routingInst *rst)

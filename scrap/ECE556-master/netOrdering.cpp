@@ -32,7 +32,7 @@ int compareNets(const void *a, const void *b)
 
 int vecCompareNets(net netA, net netB)
 {	
-	if (netA.nroute.cost > netB.nroute.cost)
+	if (netA.nroute.cost > netB.nroute.cost)//>
 	{
 		return 1;
 	}

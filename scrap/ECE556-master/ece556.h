@@ -53,7 +53,7 @@ struct point
   typedef struct
   {    
     int numSegs ;  	/* number of segments in a route*/
-    int cost;       // the total cost for this route TODO does this need to be larger?
+    long int cost;       // the total cost for this route
     segment *segments ;  /* an array of segments (note, a segment may be flat, L-shaped or any other shape, based on your preference */
 
   } route ;
@@ -101,8 +101,6 @@ int getEdgeID(routingInst *rst, point p1, point p2);
    output: 1 if successful
 */
 int readBenchmark(const char *fileName, routingInst *rst);
-
-void subnetGen(routingInst *rst);
 
 /* int solveRouting(routingInst *rst)
    This function creates a routing solution
