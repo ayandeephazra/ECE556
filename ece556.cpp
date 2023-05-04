@@ -225,12 +225,25 @@ int NumEdges(int p1_x, int p1_y, int p2_x, int p2_y)
   return num_edges;
 }
 
+void update_shortestPath(int &shortestPath, int &distToSteinerPt, point &shortestPath_pC, point &pC)
+{
+  shortestPath = distToSteinerPt;
+  shortestPath_pC.x = pC.x;
+  shortestPath_pC.y = pC.y;
+}
+
 void RSMT(int &MBB_x1, int &MBB_x2, int &MBB_y1, int &MBB_y2, int &distToSteinerPt, int &shortestPath, point &pC, point &shortestPath_pC, int &pin_itr)
 {
   // 6 scnarios handled where Pc can be located in relation with the Minimum Bouding Box
+  bool scenario1 = ((MBB_x1 <= pC.x) && (pC.x <= MBB_x2)) || ((MBB_x2 <= pC.x) && (pC.x <= MBB_x1));
+  bool scenario2 = ((MBB_y1 <= pC.y) && (pC.y <= MBB_y2)) || ((MBB_y2 <= pC.y) && (pC.y <= MBB_y1));
+  bool scenario3 = (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) || (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) || (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) || (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1)));
+  bool scenario4 = (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) || (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) || (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) || (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2)));
+  bool scenario5 = (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) || (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) || (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) || (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2)));
+  bool scenario6 = (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) || (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) || (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) || (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1)));
 
   // scenario 1
-  if (((MBB_x1 <= pC.x) && (pC.x <= MBB_x2)) || ((MBB_x2 <= pC.x) && (pC.x <= MBB_x1)))
+  if (scenario1)
   {
     if (abs(pC.y - MBB_y1) < abs(pC.y - MBB_y2))
     {
@@ -243,19 +256,15 @@ void RSMT(int &MBB_x1, int &MBB_x2, int &MBB_y1, int &MBB_y2, int &distToSteiner
 
     if (pin_itr == 0)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
     else if (distToSteinerPt < shortestPath)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
   }
   // scenario 2
-  else if (((MBB_y1 <= pC.y) && (pC.y <= MBB_y2)) || ((MBB_y2 <= pC.y) && (pC.y <= MBB_y1)))
+  else if (scenario2)
   {
     if (abs(pC.x - MBB_x1) < abs(pC.x - MBB_x2))
     {
@@ -267,101 +276,65 @@ void RSMT(int &MBB_x1, int &MBB_x2, int &MBB_y1, int &MBB_y2, int &distToSteiner
     }
     if (pin_itr == 0)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
     else if (distToSteinerPt < shortestPath)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
   }
   // scenario 3
-  else if (
-      (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) ||
-      (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
-      (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) ||
-      (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))))
+  else if (scenario3)
   {
     distToSteinerPt = abs(pC.x - MBB_x2) + abs(pC.y - MBB_y2);
     if (pin_itr == 0)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
     else if (distToSteinerPt < shortestPath)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
   }
   // scenario 4
-  else if (
-      (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
-      (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
-      (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
-      (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))))
+  else if (scenario4)
   {
     distToSteinerPt = abs(pC.x - MBB_x1) + abs(pC.y - MBB_y1);
     if (pin_itr == 0)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
     else if (distToSteinerPt < shortestPath)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
   }
   // scenario 5
-  else if ((((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
-           (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
-           (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
-           (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2)))
-
-  )
+  else if (scenario5)
   {
     distToSteinerPt = abs(pC.x - MBB_x2) + abs(pC.y - MBB_y1);
     if (pin_itr == 0)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
     else if (distToSteinerPt < shortestPath)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
   }
   // scenario 6
-  else if ((((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
-           (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) || (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
-           (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))))
+  else if (scenario6)
   {
     distToSteinerPt = abs(pC.x - MBB_x1) + abs(pC.y - MBB_y2);
     if (pin_itr == 0)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
     else if (distToSteinerPt < shortestPath)
     {
-      shortestPath = distToSteinerPt;
-      shortestPath_pC.x = pC.x;
-      shortestPath_pC.y = pC.y;
+      update_shortestPath(shortestPath, distToSteinerPt, shortestPath_pC, pC);
     }
   }
-
 }
 
 /*

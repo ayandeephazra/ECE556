@@ -99,6 +99,8 @@ output: 1 if successful, 0 otherwise
 */
 int subnetGen(routingInst *rst);
 
+void update_shortestPath(int &shortestPath, int &distToSteinerPt, point &shortestPath_pC, point &pC);
+
 void RSMT(int &MBB_x1, int &MBB_x2, int &MBB_y1, int &MBB_y2, int &distToSteinerPt, int &shortestPath, point &pC, point &shortestPath_pC, int &pin_itr);
 
 /* int solveRouting(routingInst *rst)
