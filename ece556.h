@@ -5,6 +5,9 @@
 #define ECE556_H
 
 #include <stdio.h>
+#include <sys/time.h>
+
+#define MAX_ALLOWED_RUNTIME 900 // time in seconds 
 
  /**
   * A structure to represent a 2D Point. 
@@ -95,7 +98,7 @@ void subnetGen(routingInst *rst);
 */
 int solveRouting(routingInst *rst);
 
-int rrr(routingInst *rst);
+int rrr(routingInst *rst, timeval startTime);
   
 /* int writeOutput(const char *outRouteFile, routingInst *rst)
    Write the routing solution obtained from solveRouting(). 

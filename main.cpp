@@ -2,9 +2,12 @@
 
 #include "ece556.h"
 #include "quicksort_dec.h"
+#include <sys/time.h>
 
 int main(int argc, char **argv)
 {
+	timeval startTime;
+	gettimeofday(&startTime, NULL);
 
 	if (argc != 5)
 	{
@@ -86,7 +89,7 @@ int main(int argc, char **argv)
 	/// RRR
 	if (enable_net_order_and_rrr)
 	{
-		rrr(rst);
+		rrr(rst, startTime);
 	}
 
 	/// write the result

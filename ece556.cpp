@@ -7,6 +7,7 @@
 #include "quicksort_dec.h"
 #include <fstream>
 #include <iostream>
+#include <sys/time.h>
 
 // using namespace std;
 
@@ -466,7 +467,6 @@ void subnetGen(routingInst *rst)
   }
 }
 
-
 /*
 int NumEdges(int p1_x, int p1_y, int p2_x, int p2_y)
 {
@@ -563,13 +563,12 @@ int solveRouting(routingInst *rst)
         {
           rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(0)] = (rst->nets[net_itr].pins[seg_itr].y + itr + 1) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
         }
-        
+
         y = rst->nets[net_itr].pins[seg_itr].y + dy;
         for (auto itr = 0; itr != abs(dx); itr++)
         {
           rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
         }
-      
       }
     }
   }
@@ -730,7 +729,7 @@ int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
   return 1;
 }
 
-int rrr(routingInst *rst)
+int rrr(routingInst *rst, timeval startTime)
 {
 
   // edge Utilization calculation, edgeUtils
@@ -841,31 +840,44 @@ int rrr(routingInst *rst)
     }
     printf("completed adding cost per net in iter: %d\n", loop_var);
 
-     /* sort scd_ in nlogn */
+    /* sort scd_ in nlogn */
     /* changes nets in rst too now*/
-    //quickSort_dec(0, rst->numNets - 2, rst);
+    // quickSort_dec(0, rst->numNets - 2, rst);
 
-    for(int i = 0; i<rst->numNets - 1; i++){
-      for(int j=0; j<rst->numNets - i - 1; j++){
+    for (int i = 0; i < rst->numNets - 1; i++)
+    {
+      for (int j = 0; j < rst->numNets - i - 1; j++)
+      {
 
-        if (rst->nets[j].nroute.cost < rst->nets[i].nroute.cost){
+        if (rst->nets[j].nroute.cost < rst->nets[i].nroute.cost)
+        {
           net temp = rst->nets[i];
           rst->nets[i] = rst->nets[j];
           rst->nets[j] = temp;
         }
-
       }
     }
-    
-    printf("completed quicksorting the nets by their costs: %d\n", loop_var);
 
+    printf("completed quicksorting the nets by their costs: %d\n", loop_var);
 
     /* A* */
 
     /* TERMINATION CONDITION */
     // change value of terminate
     // increment loop_var
-    if (loop_var == 50)
+    // int runstatus = is_time_up(startTime);
+    timeval curr;
+    gettimeofday(&curr, NULL);
+    if (curr.tv_sec - startTime.tv_sec > MAX_ALLOWED_RUNTIME)
+    {
+      terminate = true;
+    }
+    else
+    {
+      terminate = false;
+    }
+
+    if (loop_var == 100)
     {
       terminate = true;
     }
