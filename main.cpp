@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		//status = writeOutput_rrr(outputFileName, rst);
+		status = writeOutput_rrr(outputFileName, rst);
 		if (status == 0)
 		{
 			printf("ERROR: writing the result \n");

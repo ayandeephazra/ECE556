@@ -121,7 +121,7 @@ void RSMT(int &MBB_x1, int &MBB_x2, int &MBB_y1, int &MBB_y2, int &distToSteiner
 int solveRouting(routingInst *rst);
 
 /*
-1>We first update edge weights
+1>We first update edge weights. Coarse grained approach: Update at the start of each RRR iteration, based on the currently-stored routes
 2>We then calculate net ordering
 3>Given the updated edge weights at the beginning of each RRR
 iteration, for each net n, we calculate a cost

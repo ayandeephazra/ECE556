@@ -635,7 +635,7 @@ int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
 }
 
 /*
-1>We first update edge weights
+1>We first update edge weights. Coarse grained approach: Update at the start of each RRR iteration, based on the currently-stored routes
 2>We then calculate net ordering
 3>Given the updated edge weights at the beginning of each RRR
 iteration, for each net n, we calculate a cost
@@ -769,7 +769,7 @@ int rrr(routingInst *rst, timeval startTime)
     printf("completed quicksorting the nets by their costs: %d\n", loop_var);
 
     /* Pattern Routing / A* */
-
+    
     /* TERMINATION CONDITION */
     // change value of terminate
     // increment loop_var
@@ -838,6 +838,194 @@ int writeOutput_sub(const char *outRouteFile, routingInst *rst)
 
   fclose(file);
   return 1;
+}
+
+
+/* this function takes in an edge id, and fills in the passed
+ * in points with the edge points.  It follows the same numbering
+ * described above for getEdgeID
+ */
+void getEdgePts(routingInst *rst, int edgeID, point *pt1, point *pt2)
+{
+  int vEdgeID;
+
+  vEdgeID = edgeID - (rst->gx - 1) * (rst->gy);
+  /* first determine the direction of the edge by its magnitude */
+  if (vEdgeID > 0)
+  {
+    /* Vertical segment */
+    /* vEdgeId  = larger Y +  X * (rst->gy - 1) */
+    /* X = (int) vEdgeId / (rst->gy) */
+    pt1->x = (vEdgeID - 1) / (rst->gy - 1);
+    pt2->x = pt1->x;
+
+    pt2->y = vEdgeID - pt2->x * (rst->gy - 1);
+    pt1->y = pt2->y - 1;
+  }
+  else
+  {
+    /* horizontal segment */
+    /* edgeID = larger X + Y * (rst->gx - 1)  */
+    pt1->y = (edgeID - 1) / (rst->gx - 1);
+    pt2->y = pt1->y;
+
+    pt2->x = edgeID - pt2->y * (rst->gx - 1);
+    pt1->x = pt2->x - 1;
+  }
+}
+
+
+int writeOutput_rrr(const char *outRouteFile, routingInst *rst)
+{
+  int i, j, k;
+  point p1, p2;
+  int dxprev, dyprev, dx, dy;
+  point p1prev, p2prev;
+  FILE *fp;
+
+  /* check input parameters */
+  if (outRouteFile == NULL || rst == NULL)
+  {
+    fprintf(stderr, "Passed null arg into writeOutput.\n");
+    return EXIT_FAILURE;
+  }
+
+  fp = fopen(outRouteFile, "w");
+  if (fp == NULL)
+  {
+    fprintf(stderr, "Output file could not be created.\n");
+    return EXIT_FAILURE;
+  }
+
+  /* initialize stored points */
+  p1prev.x = 0;
+  p1prev.y = 0;
+  p2prev.x = 0;
+  p2prev.y = 0;
+
+  /* for all nets in rst,
+   * go through route  segments - for all segments,
+   * go through all edges, printing out the corresponding pts */
+  for (i = 0; i < rst->numNets; i++)
+  {
+    fprintf(fp, "n%d\n", rst->nets[i].id);
+
+    for (j = 0; j < rst->nets[i].nroute.numSegs; j++)
+    {
+
+      for (k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++)
+      {
+        getEdgePts(rst, rst->nets[i].nroute.segments[j].edges[k], &p1, &p2);
+
+        /*special case where only one edge - print edge*/
+        if (rst->nets[i].nroute.segments[j].numEdges == 1)
+        {
+          fprintf(fp, "(%d,%d)-(%d,%d)\n", p1.x, p1.y, p2.x, p2.y);
+        }
+
+        /*if first edge in segment, set this edge as the longest flat path*/
+        if (k == 0)
+        {
+          p1prev = p1;
+          p2prev = p2;
+          dxprev = abs(p2.x - p1.x);
+          dyprev = abs(p2.y - p1.y);
+        }
+        else
+        {
+          dx = abs(p2.x - p1.x);
+          dy = abs(p2.y - p1.y);
+
+          /* horizontal path, new edge also horizontal
+           * update path end point and continue */
+          if ((dxprev > 0) && (dx > 0))
+          {
+            if (p1prev.x == p2.x)
+            {
+              p1prev = p1;
+            }
+            else if (p1prev.x == p1.x)
+            {
+              p1prev = p2;
+            }
+            else if (p2prev.x == p2.x)
+            {
+              p2prev = p1;
+            }
+            else if (p2prev.x == p1.x)
+            {
+              p2prev = p2;
+            }
+            /*if last edge in segment, print*/
+            if (k == (rst->nets[i].nroute.segments[j].numEdges - 1))
+            {
+              fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
+            }
+          }
+          /* horizontal path, new edge vertical (bend)
+           * print previous path and set edge as new path */
+          else if ((dxprev > 0) && (dy > 0))
+          {
+            fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
+            p1prev = p1;
+            p2prev = p2;
+            dxprev = abs(p2.x - p1.x);
+            dyprev = abs(p2.y - p1.y);
+
+            /* if last edge in segment, print */
+            if (k == (rst->nets[i].nroute.segments[j].numEdges - 1))
+            {
+              fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
+            }
+          }
+          /* vertical path, new edge vetical */
+          else if ((dyprev > 0) && (dy > 0))
+          {
+            if (p1prev.y == p2.y)
+            {
+              p1prev = p1;
+            }
+            else if (p1prev.y == p1.y)
+            {
+              p1prev = p2;
+            }
+            else if (p2prev.y == p2.y)
+            {
+              p2prev = p1;
+            }
+            else if (p2prev.y == p1.y)
+            {
+              p2prev = p2;
+            }
+            /* if last edge in segment, print */
+            if (k == (rst->nets[i].nroute.segments[j].numEdges - 1))
+            {
+              fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
+            }
+          }
+          /* vertical path, new edge horizontal(bend) */
+          else if ((dyprev > 0) && (dx > 0))
+          {
+            fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
+            p1prev = p1;
+            p2prev = p2;
+            dxprev = abs(p2.x - p1.x);
+            dyprev = abs(p2.y - p1.y);
+
+            /* if last edge in segment, print */
+            if (k == (rst->nets[i].nroute.segments[j].numEdges - 1))
+            {
+              fprintf(fp, "(%d,%d)-(%d,%d)\n", p1prev.x, p1prev.y, p2prev.x, p2prev.y);
+            }
+          }
+        }
+      }
+    }
+
+    fprintf(fp, "!\n");
+  }
+
+  return EXIT_SUCCESS;
 }
 
 int release(routingInst *rst)

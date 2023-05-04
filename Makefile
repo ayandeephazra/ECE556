@@ -25,21 +25,25 @@ CCLNFLAGS = -lm -pthread
 #  make execute  : to compile and execute.                         
 #------------------------------------------------------------    
 
-ROUTE.exe: main.o ece556.o quicksort_dec.o
+ROUTE.exe: main.o ece556.o quicksort_dec.o aStar.o
 	/bin/rm -f ROUTE.exe
-	$(CCC) $(LINKFLAGS) $(CCFLAGS) main.o ece556.o quicksort_dec.o $(CCLNFLAGS) -o ROUTE.exe
+	$(CCC) $(LINKFLAGS) $(CCFLAGS) main.o ece556.o aStar.o quicksort_dec.o $(CCLNFLAGS) -o ROUTE.exe
 
-main.o: main.cpp ece556.h 
+main.o: main.cpp ece556.h aStar.h quicksort_dec.h
 	/bin/rm -f main.o
 	$(CCC) $(CCFLAGS) main.cpp -c
 
-ece556.o: ece556.cpp ece556.h 
+ece556.o: ece556.cpp ece556.h aStar.h quicksort_dec.h
 	/bin/rm -f ece556.o
 	$(CCC) $(CCFLAGS) ece556.cpp -c
 
-quicksort_dec.o: quicksort_dec.cpp quicksort_dec.h
+quicksort_dec.o: quicksort_dec.cpp ece556.h quicksort_dec.h 	
 	/bin/rm -f quicksort_dec.o
 	$(CCC) $(CCFLAGS) quicksort_dec.cpp -c
+
+aStar.o: aStar.cpp ece556.h aStar.h 
+	/bin/rm -f aStar.o
+	$(CCC) $(CCFLAGS) aStar.cpp -c
 
 clean:
 	/bin/rm -f *~ *.o ROUTE.exe 
