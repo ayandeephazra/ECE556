@@ -843,8 +843,20 @@ int rrr(routingInst *rst)
 
      /* sort scd_ in nlogn */
     /* changes nets in rst too now*/
-    quickSort_dec(0, rst->numNets - 2, rst);
+    //quickSort_dec(0, rst->numNets - 2, rst);
 
+    for(int i = 0; i<rst->numNets - 1; i++){
+      for(int j=0; j<rst->numNets - i - 1; j++){
+
+        if (rst->nets[j].nroute.cost < rst->nets[i].nroute.cost){
+          net temp = rst->nets[i];
+          rst->nets[i] = rst->nets[j];
+          rst->nets[j] = temp;
+        }
+
+      }
+    }
+    
     printf("completed quicksorting the nets by their costs: %d\n", loop_var);
 
 
