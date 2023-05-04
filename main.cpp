@@ -66,11 +66,18 @@ int main(int argc, char **argv)
 	/// run SUBNET gen
 	if (enable_subnet_gen)
 	{
+		printf("Generating Subnets . \n");
+		printf("Generating Subnets .. \n");
+		printf("Generating Subnets ... \n");
 		status = subnetGen(rst);
 		if (status == 0)
 		{
 			printf("ERROR: subnet generation failed! \n");
 			return 1;
+		}
+		else
+		{
+			printf("Subnet Generation Complete!! \n");
 		}
 	}
 
@@ -96,12 +103,19 @@ int main(int argc, char **argv)
 	/// write the result
 	if (enable_subnet_gen || (!enable_subnet_gen && !enable_net_order_and_rrr))
 	{
+		printf("Writing results. \n");
+		printf("Writing results.. \n");
+		printf("Writing results... \n");
 		status = writeOutput_sub(outputFileName, rst);
 		if (status == 0)
 		{
 			printf("ERROR: writing the result \n");
 			release(rst);
 			return 1;
+		}
+		else
+		{
+			printf("Write Output successful! \n");
 		}
 	}
 	else

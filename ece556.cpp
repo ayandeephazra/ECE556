@@ -225,6 +225,9 @@ int NumEdges(int p1_x, int p1_y, int p2_x, int p2_y)
   return num_edges;
 }
 
+/*
+Updates shortest path to MBB with the new distToSteinerPt
+*/
 void update_shortestPath(int &shortestPath, int &distToSteinerPt, point &shortestPath_pC, point &pC)
 {
   shortestPath = distToSteinerPt;
@@ -232,6 +235,13 @@ void update_shortestPath(int &shortestPath, int &distToSteinerPt, point &shortes
   shortestPath_pC.y = pC.y;
 }
 
+/*
+RSMT is a generalization of Rectilinear minimum spanning tree where in addition to
+the original nodes in the graph, new nodes called “Steiner Points” may be
+added to the graph which may help further reduce the total edge cost
+
+The function takes in the coordinates of the two current points of the current MBB acc. to pin_itr, and finds the RSMT distance to pC in consideration.
+*/
 void RSMT(int &MBB_x1, int &MBB_x2, int &MBB_y1, int &MBB_y2, int &distToSteinerPt, int &shortestPath, point &pC, point &shortestPath_pC, int &pin_itr)
 {
   // 6 scnarios handled where Pc can be located in relation with the Minimum Bouding Box
@@ -624,6 +634,17 @@ int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
   return 1;
 }
 
+/*
+1>We first update edge weights
+2>We then calculate net ordering
+3>Given the updated edge weights at the beginning of each RRR
+iteration, for each net n, we calculate a cost
+4>For each net in the new order, we remove the existing route stored for the net by
+decreasing the edge utilizations corresponding to the route and then reroute to generate a better route (of lower cost) for the net
+
+   input: pointer to the routing instance, starttime
+   output: 1 if successful, 0 otherwise
+*/
 int rrr(routingInst *rst, timeval startTime)
 {
 
