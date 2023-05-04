@@ -79,10 +79,14 @@ int main(int argc, char **argv)
 		release(rst);
 		return 1;
 	}
+	else{
+		printf("Successfully run routing! \n");
+	}
 
 	/// RRR
-	if(enable_net_order_and_rrr){
-
+	if (enable_net_order_and_rrr)
+	{
+		rrr(rst);
 	}
 
 	/// write the result

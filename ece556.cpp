@@ -466,7 +466,118 @@ void subnetGen(routingInst *rst)
   }
 }
 
+
+/*
+int NumEdges(int p1_x, int p1_y, int p2_x, int p2_y)
+{
+  int num_edges = abs(p1_x - p2_x) + abs(p1_y - p2_y);
+
+  return num_edges;
+}*/
+
 int solveRouting(routingInst *rst)
+{
+  /*********** TO BE FILLED BY YOU **********/
+  int x, y;
+  point p1, p2;
+  int dx, dy;
+  int x_diff_abs, y_diff_abs;
+
+  for (auto net_itr = 0; net_itr != rst->numNets; net_itr++)
+  {
+    /* Number of segments = Number of pins - 1 */
+    rst->nets[net_itr].nroute.numSegs = rst->nets[net_itr].numPins - 1;
+
+    rst->nets[net_itr].nroute.segments = (segment *)malloc(rst->nets[net_itr].nroute.numSegs * sizeof(segment));
+
+    /* Marking start-end pins and it's segments for different types of route
+    |                     --------                                   |
+    |                     |                                          |
+    |                     |                                          |
+    |________      or     |            OR     _________    OR        |
+    */
+
+    int pin_num = 0;
+    for (auto seg_itr = 0; seg_itr != rst->nets[net_itr].nroute.numSegs; seg_itr++)
+    {
+
+      // * so set starting and ending points from pins */
+      rst->nets[net_itr].nroute.segments[seg_itr].p1 = rst->nets[net_itr].pins[seg_itr];
+      rst->nets[net_itr].nroute.segments[seg_itr].p2 = rst->nets[net_itr].pins[seg_itr + 1];
+
+      /*route between pin[j] and pin [j+1] */
+      /* find delta x and delta y */
+      dx = rst->nets[net_itr].pins[seg_itr + 1].x - rst->nets[net_itr].pins[seg_itr].x;
+      dy = rst->nets[net_itr].pins[seg_itr + 1].y - rst->nets[net_itr].pins[seg_itr].y;
+
+      rst->nets[net_itr].nroute.segments[seg_itr].p1 = p1; /* start point of current segment */
+      rst->nets[net_itr].nroute.segments[seg_itr].p2 = p2; /* end point of current segment */
+
+      rst->nets[net_itr].nroute.segments[seg_itr].numEdges = abs(dx) + abs(dy); /* number of edges in the segment*/
+
+      rst->nets[net_itr].nroute.segments[seg_itr].edges =
+          (int *)malloc(rst->nets[net_itr].nroute.segments[seg_itr].numEdges * sizeof(int));
+      /*
+      For numbering the edge ids, we first number the horizontal edges from left to right starting from the bottom most one. We then number the vertical edges starting from the left most one then moving up.
+        ____e5_______e6__
+      e8|     e10|       |e12
+        |___e3___|___e4__|
+      e7|      e9|       |e11
+        |___e1___|___e2__|
+      */
+
+      if (p1.x > p2.x)
+      {
+        /*
+         Routing Horizontally towards left side
+        */
+        y = rst->nets[net_itr].pins[seg_itr].y;
+        for (auto itr = 0; itr != abs(dx); itr++)
+        {
+          rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x - itr) + y * (rst->gx - 1);
+        }
+        /*
+        Routing Vertically downwards
+        */
+        if (dy < 0)
+        {
+          x = rst->nets[net_itr].pins[seg_itr].x + dx;
+          for (auto itr = 0; itr != abs(dy); itr++)
+          {
+            rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dx)] = (rst->nets[net_itr].pins[seg_itr].y - itr) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
+          }
+        }
+        else
+        {
+          x = rst->nets[net_itr].pins[seg_itr].x;
+          for (auto itr = 0; itr != abs(dy); itr++)
+          {
+            rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dx)] = (rst->nets[net_itr].pins[seg_itr].y + itr + 1) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
+          }
+        }
+      }
+      else
+      {
+        x = rst->nets[net_itr].pins[seg_itr].x;
+        for (auto itr = 0; itr != abs(dy); itr++)
+        {
+          rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(0)] = (rst->nets[net_itr].pins[seg_itr].y + itr + 1) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
+        }
+        
+        y = rst->nets[net_itr].pins[seg_itr].y + dy;
+        for (auto itr = 0; itr != abs(dx); itr++)
+        {
+          rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+        }
+      
+      }
+    }
+  }
+
+  return 1;
+}
+
+int solveRouting_old(routingInst *rst)
 {
   /*********** TO BE FILLED BY YOU **********/
   int x, y;
@@ -582,13 +693,13 @@ int solveRouting(routingInst *rst)
 int computeEdgeUtilizations(routingInst *rst)
 {
 
-  for (int net_id = 0; net_id < rst->numNets; net_id++)
+  for (int net_id = 0; net_id < rst->numNets - 1; net_id++)
   {
 
-    for (int seg_id = 0; seg_id < rst->nets[net_id].nroute.numSegs; seg_id++)
+    for (int seg_id = 0; seg_id < rst->nets[net_id].nroute.numSegs - 1; seg_id++)
     {
 
-      for (int edge_id = 0; edge_id < rst->nets[net_id].nroute.segments[seg_id].numEdges; edge_id++)
+      for (int edge_id = 0; edge_id < rst->nets[net_id].nroute.segments[seg_id].numEdges - 1; edge_id++)
       {
 
         int edge_in_question = rst->nets[net_id].nroute.segments[seg_id].edges[edge_id];
@@ -615,6 +726,7 @@ int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
       edge_params_[edge_id].edgeOverflows = 0;
     }
   }
+
   return 1;
 }
 
@@ -622,51 +734,63 @@ int rrr(routingInst *rst)
 {
 
   // edge Utilization calculation, edgeUtils
-  computeEdgeUtilizations(rst);
+  int status = computeEdgeUtilizations(rst);
+  if (status == 0)
+  {
+    printf("ERROR: calculating Edge Utilizations\n");
+    release(rst);
+    return 1;
+  }
+  else
+  {
+    printf("Successfully run Edge Utilizations calculations! \n");
+  }
 
   bool terminate = false;
   int loop_var = 1;
   edge_params *edge_params_ = (edge_params *)malloc(rst->numEdges * sizeof(edge_params));
 
-  int *cost_array;
-  cost_array = (int *)malloc(rst->numNets * sizeof(int));
+  // int *cost_array;
+  // cost_array = (int *)malloc(rst->numNets * sizeof(int));
   // default cost array to 0
   for (int i = 0; i < rst->numNets; i++)
   {
-    cost_array[i] = 0;
+    // cost_array[i] = 0;
+    rst->nets[i].nroute.cost = 0;
   }
 
-  sorted_cost_dict *scd_ = (sorted_cost_dict *)malloc(rst->numNets * sizeof(sorted_cost_dict));
-
-  // sorted_cost_array = (int*)malloc(rst->numNets*sizeof(int));
+  // sorted_cost_dict *scd_ = (sorted_cost_dict *)malloc(rst->numNets * sizeof(sorted_cost_dict));
+  //  sorted_cost_array = (int*)malloc(rst->numNets*sizeof(int));
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //                       R I P - U P - A N D - R E R O U T E   W H I L E   L O O P                                  //
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  printf("\n");
   while (!terminate)
   {
+    printf("RRR ITERATION %d\n", loop_var);
     /* COMPUTING EDGE WEIGHTS*/
     if (loop_var == 1)
     {
       // history = 1 ffor all edges
 
-      for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
+      for (int edge_id = 0; edge_id < rst->numEdges - 1; edge_id++)
       {
-        if (rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id] > 0)
+        if (rst->edgeUtils[edge_id - 1] - rst->edgeCaps[edge_id - 1] > 0)
         {
-          edge_params_[edge_id].edgeOverflows = rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id];
+          edge_params_[edge_id - 1].edgeOverflows = rst->edgeUtils[edge_id - 1] - rst->edgeCaps[edge_id - 1];
         }
         else
         {
-          edge_params_[edge_id].edgeOverflows = 0;
+          edge_params_[edge_id - 1].edgeOverflows = 0;
         }
         // for loop 1 default histories to 1
-        edge_params_[edge_id].edgeHistories = 1;
+        edge_params_[edge_id - 1].edgeHistories = 1;
         // for every kth iteration of rip up and reroute update history using formula from slides and then using
         // history value and overflow, find weight (w=h*o)
-        edge_params_[edge_id].edgeWeights = edge_params_[edge_id].edgeHistories * edge_params_[edge_id].edgeOverflows;
+        edge_params_[edge_id - 1].edgeWeights = edge_params_[edge_id - 1].edgeHistories * edge_params_[edge_id - 1].edgeOverflows;
       }
     }
     /* NOT loop_var = 1*/
@@ -675,60 +799,70 @@ int rrr(routingInst *rst)
 
       for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
       {
-        if (rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id] > 0)
+        if (rst->edgeUtils[edge_id - 1] - rst->edgeCaps[edge_id - 1] > 0)
         {
-          edge_params_[edge_id].edgeOverflows = rst->edgeUtils[edge_id] - rst->edgeCaps[edge_id];
+          edge_params_[edge_id - 1].edgeOverflows = rst->edgeUtils[edge_id - 1] - rst->edgeCaps[edge_id - 1];
         }
         else
         {
-          edge_params_[edge_id].edgeOverflows = 0;
+          edge_params_[edge_id - 1].edgeOverflows = 0;
         }
         // for loop != 1 histories increment if overflows > 0
-        if (edge_params_[edge_id].edgeOverflows > 0)
+        if (edge_params_[edge_id - 1].edgeOverflows > 0)
         {
-          edge_params_[edge_id].edgeHistories++;
+          edge_params_[edge_id - 1].edgeHistories++;
         }
         // for every kth iteration of rip up and reroute update history using formula from slides and then using
         // history value and overflow, find weight (w=h*o)
-        edge_params_[edge_id].edgeWeights = edge_params_[edge_id].edgeHistories * edge_params_[edge_id].edgeOverflows;
+        edge_params_[edge_id - 1].edgeWeights = edge_params_[edge_id - 1].edgeHistories * edge_params_[edge_id - 1].edgeOverflows;
       }
     }
 
+    printf("completed edge weights calculation in iter: %d\n", loop_var);
+
     /* CALCULATE NET ORDERING */
-    for (int net_id = 0; net_id < rst->numNets; net_id++)
+
+    // defaulting edge net route costs to 0
+    for (int i = 0; i < rst->numNets; i++)
     {
-      for (int seg_id = 0; seg_id < rst->nets[net_id].nroute.numSegs; seg_id++)
+      rst->nets[i].nroute.cost = 0;
+    }
+
+    for (int net_id = 0; net_id < rst->numNets - 1; net_id++)
+    {
+      for (int seg_id = 0; seg_id < rst->nets[net_id].nroute.numSegs - 1; seg_id++)
       {
-        for (int edge_id = 0; edge_id < rst->nets[net_id].nroute.segments[seg_id].numEdges; edge_id++)
+        for (int edge_id = 0; edge_id < rst->nets[net_id].nroute.segments[seg_id].numEdges - 1; edge_id++)
         {
-          cost_array[net_id] = cost_array[net_id] + edge_params_[edge_id].edgeWeights;
+          rst->nets[net_id].nroute.cost += edge_params_[edge_id].edgeWeights;
+          // cost_array[net_id] = cost_array[net_id] + edge_params_[edge_id].edgeWeights;
         }
       }
     }
+    printf("completed adding cost per net in iter: %d\n", loop_var);
 
-    /* default cost array to be exactly what cost_array is */
-    for (int ele = 0; ele < rst->numNets; ele++)
-    {
-      scd_[ele].cost = cost_array[ele];
-      scd_[ele].net_id = ele;
-    }
-
-    /* sort scd_ in nlogn */
+     /* sort scd_ in nlogn */
     /* changes nets in rst too now*/
-    quickSort_dec(0, rst->numNets - 1, scd_, rst);
-    
+    quickSort_dec(0, rst->numNets - 2, rst);
+
+    printf("completed quicksorting the nets by their costs: %d\n", loop_var);
+
 
     /* A* */
 
     /* TERMINATION CONDITION */
     // change value of terminate
     // increment loop_var
+    if (loop_var == 50)
+    {
+      terminate = true;
+    }
     loop_var++;
   }
   // free memory formerly declared
-  free(scd_);
-  free(cost_array);
-  free(edge_params_);
+  // free(scd_);
+  // free(cost_array);
+  // free(edge_params_);
   return 1;
 }
 

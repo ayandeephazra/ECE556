@@ -38,6 +38,7 @@
   {
     int numSegs ;  	/* number of segments in a route*/
     segment *segments ;  /* an array of segments (note, a segment may be flat, L-shaped or any other shape, based on your preference */
+    long int cost;
 
   } route ;
  
@@ -93,6 +94,8 @@ void subnetGen(routingInst *rst);
    output: 1 if successful, 0 otherwise (e.g. the data structures are not populated) 
 */
 int solveRouting(routingInst *rst);
+
+int rrr(routingInst *rst);
   
 /* int writeOutput(const char *outRouteFile, routingInst *rst)
    Write the routing solution obtained from solveRouting(). 

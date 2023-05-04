@@ -15,10 +15,10 @@ typedef struct
 /* simple function that swaps two integers*/
 void swap(int *a, int *b);
 
-/* function to find the partition's position */
-int partition(int low, int high, sorted_cost_dict* scd_, routingInst* rst);
+/* function to find the partition's position */ //sorted_cost_dict* scd_, 
+int partition(int low, int high, routingInst* rst);
 
-/* function that implements the actual quicksort functionality */
-void quickSort_dec(int low, int high, sorted_cost_dict* scd_, routingInst* rst);
+/* function that implements the actual quicksort functionality */ //sorted_cost_dict* scd_,
+void quickSort_dec(int low, int high,  routingInst* rst);
 
 #endif
