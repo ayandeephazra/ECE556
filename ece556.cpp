@@ -9,8 +9,6 @@
 #include <iostream>
 #include <sys/time.h>
 
-// using namespace std;
-
 typedef struct
 {
   int edgeOverflows;
@@ -142,10 +140,10 @@ int readBenchmark(const char *fileName, routingInst *rst)
   }
   typedef struct
   {
-    int MBB_x1;
-    int MBB_y1;
-    int MBB_x2;
-    int MBB_y2;
+    int x1;
+    int y1;
+    int x2;
+    int y2;
     int newcap;
   } blockage;
 
@@ -164,14 +162,14 @@ int readBenchmark(const char *fileName, routingInst *rst)
   {
     fgets(buffer, 200 * sizeof(char), file);
 
-    char MBB_x1[100], MBB_x2[100], MBB_y1[100], MBB_y2[100], newcap[100];
+    char x1[100], x2[100], y1[100], y2[100], newcap[100];
 
-    if (sscanf(buffer, "%s %s %s %s %s\n", MBB_x1, MBB_y1, MBB_x2, MBB_y2, newcap) > 0)
+    if (sscanf(buffer, "%s %s %s %s %s\n", x1, y1, x2, y2, newcap) > 0)
     {
-      blockage_[blockage_indx].MBB_x1 = atoi(MBB_x1);
-      blockage_[blockage_indx].MBB_y1 = atoi(MBB_y1);
-      blockage_[blockage_indx].MBB_x2 = atoi(MBB_x2);
-      blockage_[blockage_indx].MBB_y2 = atoi(MBB_y2);
+      blockage_[blockage_indx].x1 = atoi(x1);
+      blockage_[blockage_indx].y1 = atoi(y1);
+      blockage_[blockage_indx].x2 = atoi(x2);
+      blockage_[blockage_indx].y2 = atoi(y2);
       blockage_[blockage_indx].newcap = atoi(newcap);
     }
   }
@@ -184,34 +182,34 @@ int readBenchmark(const char *fileName, routingInst *rst)
   for (int recalc_indx = 0; recalc_indx < num_blockages; recalc_indx++)
   {
     // same row blockage calculation
-    if (blockage_[recalc_indx].MBB_x1 == blockage_[recalc_indx].MBB_x2)
+    if (blockage_[recalc_indx].x1 == blockage_[recalc_indx].x2)
     {
-      if (blockage_[recalc_indx].MBB_y1 != blockage_[recalc_indx].MBB_y2)
+      if (blockage_[recalc_indx].y1 != blockage_[recalc_indx].y2)
       {
-        if (blockage_[recalc_indx].MBB_y1 < blockage_[recalc_indx].MBB_y2)
+        if (blockage_[recalc_indx].y1 < blockage_[recalc_indx].y2)
         {
-          rst->edgeCaps[(rst->gy * (rst->gx - 1)) + blockage_[recalc_indx].MBB_x1 +
-                        (rst->gx * blockage_[recalc_indx].MBB_y1)] = blockage_[recalc_indx].newcap;
+          rst->edgeCaps[(rst->gy * (rst->gx - 1)) + blockage_[recalc_indx].x1 +
+                        (rst->gx * blockage_[recalc_indx].y1)] = blockage_[recalc_indx].newcap;
         }
         else
         {
-          rst->edgeCaps[(rst->gy * (rst->gx - 1)) + blockage_[recalc_indx].MBB_x2 +
-                        (rst->gx * blockage_[recalc_indx].MBB_y2)] = blockage_[recalc_indx].newcap;
+          rst->edgeCaps[(rst->gy * (rst->gx - 1)) + blockage_[recalc_indx].x2 +
+                        (rst->gx * blockage_[recalc_indx].y2)] = blockage_[recalc_indx].newcap;
         }
       }
     }
     // same column blockage calculation
     else
     {
-      if (blockage_[recalc_indx].MBB_x1 < blockage_[recalc_indx].MBB_x2)
+      if (blockage_[recalc_indx].x1 < blockage_[recalc_indx].x2)
       {
-        rst->edgeCaps[(blockage_[recalc_indx].MBB_y1 * (rst->gx - 1)) +
-                      blockage_[recalc_indx].MBB_x1] = blockage_[recalc_indx].newcap;
+        rst->edgeCaps[(blockage_[recalc_indx].y1 * (rst->gx - 1)) +
+                      blockage_[recalc_indx].x1] = blockage_[recalc_indx].newcap;
       }
       else
       {
-        rst->edgeCaps[(blockage_[recalc_indx].MBB_y2 * (rst->gx - 1)) +
-                      blockage_[recalc_indx].MBB_x2] = blockage_[recalc_indx].newcap;
+        rst->edgeCaps[(blockage_[recalc_indx].y2 * (rst->gx - 1)) +
+                      blockage_[recalc_indx].x2] = blockage_[recalc_indx].newcap;
       }
     }
   }
@@ -227,7 +225,160 @@ int NumEdges(int p1_x, int p1_y, int p2_x, int p2_y)
   return num_edges;
 }
 
-void subnetGen(routingInst *rst)
+void RSMT(int &MBB_x1, int &MBB_x2, int &MBB_y1, int &MBB_y2, int &distToSteinerPt, int &shortestPath, point &pC, point &shortestPath_pC, int &pin_itr)
+{
+  // 6 scnarios handled where Pc can be located in relation with the Minimum Bouding Box
+
+  // scenario 1
+  if (((MBB_x1 <= pC.x) && (pC.x <= MBB_x2)) || ((MBB_x2 <= pC.x) && (pC.x <= MBB_x1)))
+  {
+    if (abs(pC.y - MBB_y1) < abs(pC.y - MBB_y2))
+    {
+      distToSteinerPt = abs(pC.y - MBB_y1);
+    }
+    else
+    {
+      distToSteinerPt = abs(pC.y - MBB_y2);
+    }
+
+    if (pin_itr == 0)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+    else if (distToSteinerPt < shortestPath)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+  }
+  // scenario 2
+  else if (((MBB_y1 <= pC.y) && (pC.y <= MBB_y2)) || ((MBB_y2 <= pC.y) && (pC.y <= MBB_y1)))
+  {
+    if (abs(pC.x - MBB_x1) < abs(pC.x - MBB_x2))
+    {
+      distToSteinerPt = abs(pC.x - MBB_x1);
+    }
+    else
+    {
+      distToSteinerPt = abs(pC.x - MBB_x2);
+    }
+    if (pin_itr == 0)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+    else if (distToSteinerPt < shortestPath)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+  }
+  // scenario 3
+  else if (
+      (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) ||
+      (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
+      (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) ||
+      (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))))
+  {
+    distToSteinerPt = abs(pC.x - MBB_x2) + abs(pC.y - MBB_y2);
+    if (pin_itr == 0)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+    else if (distToSteinerPt < shortestPath)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+  }
+  // scenario 4
+  else if (
+      (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
+      (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
+      (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
+      (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))))
+  {
+    distToSteinerPt = abs(pC.x - MBB_x1) + abs(pC.y - MBB_y1);
+    if (pin_itr == 0)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+    else if (distToSteinerPt < shortestPath)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+  }
+  // scenario 5
+  else if ((((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
+           (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
+           (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
+           (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2)))
+
+  )
+  {
+    distToSteinerPt = abs(pC.x - MBB_x2) + abs(pC.y - MBB_y1);
+    if (pin_itr == 0)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+    else if (distToSteinerPt < shortestPath)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+  }
+  // scenario 6
+  else if ((((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
+           (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) || (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
+           (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))))
+  {
+    distToSteinerPt = abs(pC.x - MBB_x1) + abs(pC.y - MBB_y2);
+    if (pin_itr == 0)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+    else if (distToSteinerPt < shortestPath)
+    {
+      shortestPath = distToSteinerPt;
+      shortestPath_pC.x = pC.x;
+      shortestPath_pC.y = pC.y;
+    }
+  }
+
+}
+
+/*
+Generate two-terminal subnets for multi-terminal nets
+This step is essentially reordering of the entries in
+the pins array of the net data structure, assuming each pair
+of consecutive pins in the array make a subnet
+
+We use RSMT which is a generalization of RMST where in addition to
+the original nodes in the graph, new nodes called
+“Steiner Points” may be added to the graph which may help further reduce the
+total edge cost
+
+input: pointer to the routing instance
+output: 1 if successful, 0 otherwise
+*/
+int subnetGen(routingInst *rst)
 {
 
   int shortestPath;
@@ -332,139 +483,15 @@ void subnetGen(routingInst *rst)
             MBB_y1 = temp0.y;
             MBB_y2 = temp1.y;
 
-            if (((MBB_x1 <= pC.x) && (pC.x <= MBB_x2)) || ((MBB_x2 <= pC.x) && (pC.x <= MBB_x1)))
-            {
-              if (abs(pC.y - MBB_y1) < abs(pC.y - MBB_y2))
-              {
-                distToSteinerPt = abs(pC.y - MBB_y1);
-              }
-              else
-              {
-                distToSteinerPt = abs(pC.y - MBB_y2);
-              }
-
-              if (pin_itr == 0)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-              else if (distToSteinerPt < shortestPath)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-            }
-            else if (((MBB_y1 <= pC.y) && (pC.y <= MBB_y2)) || ((MBB_y2 <= pC.y) && (pC.y <= MBB_y1)))
-            {
-              if (abs(pC.x - MBB_x1) < abs(pC.x - MBB_x2))
-              {
-                distToSteinerPt = abs(pC.x - MBB_x1);
-              }
-              else
-              {
-                distToSteinerPt = abs(pC.x - MBB_x2);
-              }
-              if (pin_itr == 0)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-              else if (distToSteinerPt < shortestPath)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-            }
-            else if (
-                (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) ||
-                (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
-                (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) ||
-                (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))))
-            {
-              distToSteinerPt = abs(pC.x - MBB_x2) + abs(pC.y - MBB_y2);
-              if (pin_itr == 0)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-              else if (distToSteinerPt < shortestPath)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-            }
-            else if (
-                (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
-                (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
-                (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
-                (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))))
-            {
-              distToSteinerPt = abs(pC.x - MBB_x1) + abs(pC.y - MBB_y1);
-              if (pin_itr == 0)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-              else if (distToSteinerPt < shortestPath)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-            }
-
-            else if ((((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
-                     (((pC.x > MBB_x2) && (MBB_x2 >= MBB_x1)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2))) ||
-                     (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y > MBB_y1) && (MBB_y1 >= MBB_y2))) ||
-                     (((pC.x < MBB_x2) && (MBB_x2 <= MBB_x1)) && ((pC.y < MBB_y1) && (MBB_y1 <= MBB_y2)))
-
-            )
-            {
-              distToSteinerPt = abs(pC.x - MBB_x2) + abs(pC.y - MBB_y1);
-              if (pin_itr == 0)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-              else if (distToSteinerPt < shortestPath)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-            }
-            else if ((((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
-                     (((pC.x > MBB_x1) && (MBB_x1 >= MBB_x2)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))) || (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y > MBB_y2) && (MBB_y2 >= MBB_y1))) ||
-                     (((pC.x < MBB_x1) && (MBB_x1 <= MBB_x2)) && ((pC.y < MBB_y2) && (MBB_y2 <= MBB_y1))))
-            {
-              distToSteinerPt = abs(pC.x - MBB_x1) + abs(pC.y - MBB_y2);
-              if (pin_itr == 0)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-              else if (distToSteinerPt < shortestPath)
-              {
-                shortestPath = distToSteinerPt;
-                shortestPath_pC.x = pC.x;
-                shortestPath_pC.y = pC.y;
-              }
-            }
+            RSMT(MBB_x1, MBB_x2, MBB_y1, MBB_y2, distToSteinerPt, shortestPath, pC, shortestPath_pC, pin_itr);
           }
         }
         pin_itr++;
       }
     }
   }
+
+  return 1;
 }
 
 int solveRouting(routingInst *rst)
@@ -601,9 +628,13 @@ int computeEdgeUtilizations(routingInst *rst)
   return 1;
 }
 
+/*
+The weight of an edge is based on negotiation-based routing and given by
+this formula:
+– w ke = o k-1e x hke
+*/
 int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
 {
-  // edge_params *edge_params_ = (edge_params *)malloc(rst->numEdges * sizeof(edge_params));
 
   for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
   {
@@ -623,7 +654,7 @@ int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
 int rrr(routingInst *rst, timeval startTime)
 {
 
-  // edge Utilization calculation, edgeUtils
+  // calculates edgeUtils param in rst
   int status = computeEdgeUtilizations(rst);
   if (status == 0)
   {
@@ -640,17 +671,10 @@ int rrr(routingInst *rst, timeval startTime)
   int loop_var = 1;
   edge_params *edge_params_ = (edge_params *)malloc(rst->numEdges * sizeof(edge_params));
 
-  // int *cost_array;
-  // cost_array = (int *)malloc(rst->numNets * sizeof(int));
-  // default cost array to 0
   for (int i = 0; i < rst->numNets; i++)
   {
-    // cost_array[i] = 0;
     rst->nets[i].nroute.cost = 0;
   }
-
-  // sorted_cost_dict *scd_ = (sorted_cost_dict *)malloc(rst->numNets * sizeof(sorted_cost_dict));
-  //  sorted_cost_array = (int*)malloc(rst->numNets*sizeof(int));
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -664,7 +688,6 @@ int rrr(routingInst *rst, timeval startTime)
     /* COMPUTING EDGE WEIGHTS*/
     if (loop_var == 1)
     {
-      // history = 1 ffor all edges
 
       for (int edge_id = 0; edge_id < rst->numEdges - 1; edge_id++)
       {
@@ -751,7 +774,7 @@ int rrr(routingInst *rst, timeval startTime)
 
     printf("completed quicksorting the nets by their costs: %d\n", loop_var);
 
-    /* A* */
+    /* Pattern Routing / A* */
 
     /* TERMINATION CONDITION */
     // change value of terminate
@@ -774,14 +797,11 @@ int rrr(routingInst *rst, timeval startTime)
     }
     loop_var++;
   }
-  // free memory formerly declared
-  // free(scd_);
-  // free(cost_array);
-  // free(edge_params_);
+
   return 1;
 }
 
-int writeOutput(const char *outRouteFile, routingInst *rst)
+int writeOutput_sub(const char *outRouteFile, routingInst *rst)
 {
   /*********** TO BE FILLED BY YOU **********/
 
@@ -791,16 +811,16 @@ int writeOutput(const char *outRouteFile, routingInst *rst)
     perror("Error opening file");
     return 0;
   }
-  // fprintf(file, "%d", rst->numNets + 1);
+
   for (int i = 0; i < rst->numNets; i++)
   {
     fprintf(file, "%s%d\n", "n", i);
     for (int j = 0; j < rst->nets[i].nroute.numSegs; j++)
     {
-      int MBB_x1 = rst->nets[i].nroute.segments[j].p1.x;
-      int MBB_y1 = rst->nets[i].nroute.segments[j].p1.y;
-      int MBB_x2 = rst->nets[i].nroute.segments[j].p2.x;
-      int MBB_y2 = rst->nets[i].nroute.segments[j].p2.y;
+      int x1 = rst->nets[i].nroute.segments[j].p1.x;
+      int y1 = rst->nets[i].nroute.segments[j].p1.y;
+      int x2 = rst->nets[i].nroute.segments[j].p2.x;
+      int y2 = rst->nets[i].nroute.segments[j].p2.y;
 
       // if the points have some sort of a diagonal relation
       // meaning they aren't on the same x or y axis
@@ -808,15 +828,15 @@ int writeOutput(const char *outRouteFile, routingInst *rst)
           (rst->nets[i].nroute.segments[j].p1.y != rst->nets[i].nroute.segments[j].p2.y))
       {
         ///////////////////////////////////////////////////////////
-        //  We opCed to connect MBB_x1,MBB_y1 and MBB_x2,MBB_y2 through MBB_x2,MBB_y1   //
+        //  We opCed to connect x1,y1 and x2,y2 through x2,y1   //
         /////////////////////////////////////////////////////////
-        fprintf(file, "(%d,%d)-(%d,%d)\n", MBB_x1, MBB_y1, MBB_x2, MBB_y1);
-        fprintf(file, "(%d,%d)-(%d,%d)\n", MBB_x2, MBB_y1, MBB_x2, MBB_y2);
+        fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y1, x2, y1);
+        fprintf(file, "(%d,%d)-(%d,%d)\n", x2, y1, x2, y2);
       }
       // if there is a horizontal or vertical relation between the points
       else
       {
-        fprintf(file, "(%d,%d)-(%d,%d)\n", MBB_x1, MBB_y1, MBB_x2, MBB_y2);
+        fprintf(file, "(%d,%d)-(%d,%d)\n", x1, y1, x2, y2);
       }
     }
     fprintf(file, "%s\n", "!");

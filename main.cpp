@@ -66,14 +66,14 @@ int main(int argc, char **argv)
 	/// run SUBNET gen
 	if (enable_subnet_gen)
 	{
-		subnetGen(rst);
+		status = subnetGen(rst);
+		if (status == 0)
+		{
+			printf("ERROR: subnet generation failed! \n");
+			return 1;
+		}
 	}
-	/*if(status==0){
-		printf("ERROR: running routing \n");
-		release(rst);
-		return 1;
-	}
-	*/
+
 	/// run actual routing
 	status = solveRouting(rst);
 	if (status == 0)
@@ -82,7 +82,8 @@ int main(int argc, char **argv)
 		release(rst);
 		return 1;
 	}
-	else{
+	else
+	{
 		printf("Successfully run routing! \n");
 	}
 
@@ -93,12 +94,25 @@ int main(int argc, char **argv)
 	}
 
 	/// write the result
-	status = writeOutput(outputFileName, rst);
-	if (status == 0)
+	if (enable_subnet_gen || (!enable_subnet_gen && !enable_net_order_and_rrr))
 	{
-		printf("ERROR: writing the result \n");
-		release(rst);
-		return 1;
+		status = writeOutput_sub(outputFileName, rst);
+		if (status == 0)
+		{
+			printf("ERROR: writing the result \n");
+			release(rst);
+			return 1;
+		}
+	}
+	else
+	{
+		//status = writeOutput_rrr(outputFileName, rst);
+		if (status == 0)
+		{
+			printf("ERROR: writing the result \n");
+			release(rst);
+			return 1;
+		}
 	}
 
 	release(rst);
