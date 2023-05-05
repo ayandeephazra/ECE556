@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 
-#define MAX_ALLOWED_RUNTIME 100 // time in seconds
+#define MAX_ALLOWED_RUNTIME 10 // time in seconds
 
 /**
  * A structure to represent a 2D Point.
