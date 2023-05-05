@@ -123,6 +123,7 @@ int main(int argc, char **argv)
 		//status = writeOutput_rrr(outputFileName, rst);
 		if (status == 0)
 		{
+			status = writeOutput_sub(outputFileName, rst);
 			printf("ERROR: writing the result \n");
 			release(rst);
 			return 1;

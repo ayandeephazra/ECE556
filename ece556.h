@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <sys/time.h>
 
-#define MAX_ALLOWED_RUNTIME 10 // time in seconds
+#define MAX_ALLOWED_RUNTIME 100 // time in seconds
 
 /**
  * A structure to represent a 2D Point.
@@ -145,7 +145,7 @@ int rrr(routingInst *rst, timeval startTime);
    input2: pointer to the routing instance
    output: 1 if successful, 0 otherwise
   */
-int writeOutput_rrr(const char *outRouteFile, routingInst *rst);
+//int writeOutput_rrr(const char *outRouteFile, routingInst *rst);
 int writeOutput_sub(const char *outRouteFile, routingInst *rst);
 
 /* int release(routingInst *rst)

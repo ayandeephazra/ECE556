@@ -480,28 +480,31 @@ int subnetGen(routingInst *rst)
 int getEdgeID(routingInst *rst, int x1, int y1, int x2, int y2)
 {
   /* determine if horiz or vertical */
-  if( y2 > y1 )
+  if (y2 > y1)
   {
     /* vertical, (x2,y2) on top */
-    return ( y2 + (rst->gx - 1)*(rst->gy) + x1*(rst->gy - 1));
-  }else if( y2 < y1 ) 
+    return (y2 + (rst->gx - 1) * (rst->gy) + x1 * (rst->gy - 1));
+  }
+  else if (y2 < y1)
   {
     /* vertical, (x1,y1) on top */
-    return ( y1 + (rst->gx - 1)*(rst->gy) + x1*(rst->gy - 1));
-  }else if( x2 > x1 )
+    return (y1 + (rst->gx - 1) * (rst->gy) + x1 * (rst->gy - 1));
+  }
+  else if (x2 > x1)
   {
     /* horiz, (x2, y2) on right */
-    return (x2 + y1*(rst->gx-1) );
-  }else
+    return (x2 + y1 * (rst->gx - 1));
+  }
+  else
   {
     /* horiz, (x1, y1) on right */
-    return (x1 + y1*(rst->gx-1) );
+    return (x1 + y1 * (rst->gx - 1));
   }
 }
 
 int getEdgeID(routingInst *rst, point p1, point p2)
 {
-  return getEdgeID(rst, p1.x, p1.y, p2.x, p2.y );
+  return getEdgeID(rst, p1.x, p1.y, p2.x, p2.y);
 }
 
 /* this function takes in an edge id, and fills in the passed
@@ -512,23 +515,24 @@ void getEdgePts(routingInst *rst, int edgeID, point *pt1, point *pt2)
 {
   int vEdgeID;
 
-  vEdgeID = edgeID - (rst->gx - 1)*(rst->gy);
+  vEdgeID = edgeID - (rst->gx - 1) * (rst->gy);
   /* first determine the direction of the edge by its magnitude */
-  if( vEdgeID > 0 )
+  if (vEdgeID > 0)
   {
     /* Vertical segment */
-    /* vEdgeId  = larger Y +  X * (rst->gy - 1) */ 
+    /* vEdgeId  = larger Y +  X * (rst->gy - 1) */
     /* X = (int) vEdgeId / (rst->gy) */
-    pt1->x = (vEdgeID-1) / (rst->gy-1);
+    pt1->x = (vEdgeID - 1) / (rst->gy - 1);
     pt2->x = pt1->x;
 
     pt2->y = vEdgeID - pt2->x * (rst->gy - 1);
     pt1->y = pt2->y - 1;
-  }else
+  }
+  else
   {
     /* horizontal segment */
     /* edgeID = larger X + Y * (rst->gx - 1)  */
-    pt1->y = (edgeID-1) / (rst->gx-1);
+    pt1->y = (edgeID - 1) / (rst->gx - 1);
     pt2->y = pt1->y;
 
     pt2->x = edgeID - pt2->y * (rst->gx - 1);
@@ -545,29 +549,30 @@ void routeHorizontal(routingInst *rst, int i, int j, int dx, int dy)
   /* adjust y coord if the vertical part was routed first */
   y = rst->nets[i].pins[j].y + dy;
 
-  if(dx < 0)
+  if (dx < 0)
   {
     /* -dx means p1 is right of p2, route left */
-    for(k = 0; k < -dx; k++)
+    for (k = 0; k < -dx; k++)
     {
-      id = getEdgeID( rst,
-                      rst->nets[i].pins[j].x - k,
-                      y,
-                      rst->nets[i].pins[j].x - k-1,
-                      y);
-      rst->nets[i].nroute.segments[j].edges[k+abs(dy)] = id;
+      id = getEdgeID(rst,
+                     rst->nets[i].pins[j].x - k,
+                     y,
+                     rst->nets[i].pins[j].x - k - 1,
+                     y);
+      rst->nets[i].nroute.segments[j].edges[k + abs(dy)] = id;
     }
-  }else
+  }
+  else
   {
     /* +dx means p1 is left of p2, route right */
-    for(k = 0; k < dx; k++)
+    for (k = 0; k < dx; k++)
     {
-      id = getEdgeID( rst,
-                      rst->nets[i].pins[j].x + k,
-                      y,
-                      rst->nets[i].pins[j].x + k+1,
-                      y);
-      rst->nets[i].nroute.segments[j].edges[k+abs(dy)] = id;
+      id = getEdgeID(rst,
+                     rst->nets[i].pins[j].x + k,
+                     y,
+                     rst->nets[i].pins[j].x + k + 1,
+                     y);
+      rst->nets[i].nroute.segments[j].edges[k + abs(dy)] = id;
     }
   }
 }
@@ -584,35 +589,36 @@ void routeVertical(routingInst *rst, int i, int j, int dx, int dy)
   /* adjust x coord of vert route if horiz is already done */
   x = rst->nets[i].pins[j].x + dx;
 
-  if(dy < 0)
+  if (dy < 0)
   {
     /* -dy means p1 above p2, must go down */
-    for(k = 0; k < -dy; k++)
+    for (k = 0; k < -dy; k++)
     {
-      id = getEdgeID( rst,
-                      x,
-                      rst->nets[i].pins[j].y - k,
-                      x,
-                      rst->nets[i].pins[j].y - k-1);
-      rst->nets[i].nroute.segments[j].edges[k+abs(dx)] = id;
+      id = getEdgeID(rst,
+                     x,
+                     rst->nets[i].pins[j].y - k,
+                     x,
+                     rst->nets[i].pins[j].y - k - 1);
+      rst->nets[i].nroute.segments[j].edges[k + abs(dx)] = id;
     }
-  }else
+  }
+  else
   {
     /* +dy means p1 is below p2, route up */
-    for(k = 0; k < dy; k++)
+    for (k = 0; k < dy; k++)
     {
-      id = getEdgeID( rst,
-                      x,
-                      rst->nets[i].pins[j].y + k,
-                      x,
-                      rst->nets[i].pins[j].y + k+1);
-      rst->nets[i].nroute.segments[j].edges[k+abs(dx)] = id;
+      id = getEdgeID(rst,
+                     x,
+                     rst->nets[i].pins[j].y + k,
+                     x,
+                     rst->nets[i].pins[j].y + k + 1);
+      rst->nets[i].nroute.segments[j].edges[k + abs(dx)] = id;
     }
   }
 }
 
-
-int solveRouting(routingInst *rst){
+int solveRouting(routingInst *rst)
+{
   /* Go through all nets in routing instance.
    * Connect pairs of pins via shortest route */
 
@@ -621,52 +627,51 @@ int solveRouting(routingInst *rst){
   int i, j;
   int dx, dy;
 
-  for(i = 0; i < rst->numNets; i++)
+  for (i = 0; i < rst->numNets; i++)
   {
     /* route all pins of a net */
-    /* assume 1 segment between every 2 pts, so 
+    /* assume 1 segment between every 2 pts, so
      * numpins-1 segments */
-    rst->nets[i].nroute.numSegs = rst->nets[i].numPins - 1; 
-    rst->nets[i].nroute.segments = (segment*)malloc(rst->nets[i].nroute.numSegs*sizeof(segment));
-    if(rst->nets[i].nroute.segments == NULL)
+    rst->nets[i].nroute.numSegs = rst->nets[i].numPins - 1;
+    rst->nets[i].nroute.segments = (segment *)malloc(rst->nets[i].nroute.numSegs * sizeof(segment));
+    if (rst->nets[i].nroute.segments == NULL)
     {
       fprintf(stderr, "Failed to allocate memory for route segments.\n");
       return 0;
     }
 
-    
-    for(j = 0; j < rst->nets[i].nroute.numSegs; j++)
+    for (j = 0; j < rst->nets[i].nroute.numSegs; j++)
     {
       /* use L or 7  (or straight line) segments,
        * so set starting and ending points from pins */
       rst->nets[i].nroute.segments[j].p1 = rst->nets[i].pins[j];
-      rst->nets[i].nroute.segments[j].p2 = rst->nets[i].pins[j+1];
+      rst->nets[i].nroute.segments[j].p2 = rst->nets[i].pins[j + 1];
 
       /*route between pin[j] and pin [j+1] */
       /* find delta x and delta y */
-      dx = rst->nets[i].pins[j+1].x - rst->nets[i].pins[j].x;
-      dy = rst->nets[i].pins[j+1].y - rst->nets[i].pins[j].y;
+      dx = rst->nets[i].pins[j + 1].x - rst->nets[i].pins[j].x;
+      dy = rst->nets[i].pins[j + 1].y - rst->nets[i].pins[j].y;
 
       /* calc number of edges using dx and dy */
-      rst->nets[i].nroute.segments[j].numEdges = 
-        abs(dx) + abs(dy);
+      rst->nets[i].nroute.segments[j].numEdges =
+          abs(dx) + abs(dy);
 
-      rst->nets[i].nroute.segments[j].edges = 
-        (int*)malloc(rst->nets[i].nroute.segments[j].numEdges*sizeof(int));
-      if( rst->nets[i].nroute.segments[j].edges == NULL)
+      rst->nets[i].nroute.segments[j].edges =
+          (int *)malloc(rst->nets[i].nroute.segments[j].numEdges * sizeof(int));
+      if (rst->nets[i].nroute.segments[j].edges == NULL)
       {
         fprintf(stderr, "Failed to allocate memory for edges array.\n");
         return 0;
       }
 
-
-      /* use sign of dx to determine if route goes horiz. or 
+      /* use sign of dx to determine if route goes horiz. or
        * vert. from p1 first */
-      if(dx < 0)
+      if (dx < 0)
       {
         routeHorizontal(rst, i, j, dx, 0);
         routeVertical(rst, i, j, dx, dy);
-      }else
+      }
+      else
       {
         routeVertical(rst, i, j, 0, dy);
         routeHorizontal(rst, i, j, dx, dy);
@@ -795,17 +800,16 @@ int computeEdgeUtilizations(routingInst *rst)
 
   for (int net_id = 0; net_id < rst->numNets - 1; net_id++)
   {
-    
 
     for (int seg_id = 0; seg_id < rst->nets[net_id].nroute.numSegs - 1; seg_id++)
-    { 
+    {
 
       for (int edge_id = 0; edge_id < rst->nets[net_id].nroute.segments[seg_id].numEdges - 1; edge_id++)
       {
 
         int edge_in_question = rst->nets[net_id].nroute.segments[seg_id].edges[edge_id];
         // defaulted to zero, so just incremenent whenever there's a match
-       // printf("\n\n\nrvewvefbv");
+        // printf("\n\n\nrvewvefbv");
         rst->edgeUtils[edge_in_question - 1]++;
       }
     }
@@ -820,8 +824,6 @@ this formula:
 */
 int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
 {
-
-
 
   for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
   {
@@ -842,7 +844,7 @@ int patternRouting(routingInst *rst)
 {
   /*********** TO BE FILLED BY YOU **********/
   int x, y;
-  point p1, p2;
+  // point p1, p2;
   int dx, dy;
   int x_diff_abs, y_diff_abs;
 
@@ -873,8 +875,8 @@ int patternRouting(routingInst *rst)
       dx = rst->nets[net_itr].pins[seg_itr + 1].x - rst->nets[net_itr].pins[seg_itr].x;
       dy = rst->nets[net_itr].pins[seg_itr + 1].y - rst->nets[net_itr].pins[seg_itr].y;
 
-      rst->nets[net_itr].nroute.segments[seg_itr].p1 = p1; /* start point of current segment */
-      rst->nets[net_itr].nroute.segments[seg_itr].p2 = p2; /* end point of current segment */
+      // rst->nets[net_itr].nroute.segments[seg_itr].p1 = p1; /* start point of current segment */
+      // rst->nets[net_itr].nroute.segments[seg_itr].p2 = p2; /* end point of current segment */
 
       rst->nets[net_itr].nroute.segments[seg_itr].numEdges = abs(dx) + abs(dy); /* number of edges in the segment*/
 
@@ -889,48 +891,145 @@ int patternRouting(routingInst *rst)
         |___e1___|___e2__|
       */
 
-      if (p1.x > p2.x)
-      {
-        /*
-         Routing Horizontally towards left side
-        */
-        y = rst->nets[net_itr].pins[seg_itr].y;
-        for (auto itr = 0; itr != abs(dx); itr++)
-        {
-          rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x - itr) + y * (rst->gx - 1);
-        }
-        /*
-        Routing Vertically downwards
-        */
+      point p1 = rst->nets[net_itr].pins[seg_itr];
+      point p2 = rst->nets[net_itr].pins[seg_itr + 1];
 
-        x = rst->nets[net_itr].pins[seg_itr].x + dx;
-        for (auto itr = 0; itr != abs(dy); itr++)
+      if (abs(dx) == 0 & abs(dy) == 0)
+      {
+        printf("\nloop42");
+        continue;
+      }
+      if (abs(dx) == 0)
+      {
+        printf("\nloop32");
+        if (dy > 0)
         {
-          rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dx)] = (rst->nets[net_itr].pins[seg_itr].y - itr) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
+          routeVertical(rst, net_itr, seg_itr, 0, dy);
         }
+        else
+        {
+          routeVertical(rst, net_itr, seg_itr, 0, dy);
+        }
+        // vertical route
+      }
+      if (abs(dy) == 0)
+      {
+        printf("\nloop22");
+        if (dx > 0)
+        {
+          routeHorizontal(rst, net_itr, seg_itr, dx, 0);
+        }
+        else
+        {
+          routeHorizontal(rst, net_itr, seg_itr, dx, 0);
+        }
+
+        // horizontal route
       }
       else
       {
-        /*
-       Routing Vertically upwards
-       */
-        x = rst->nets[net_itr].pins[seg_itr].x;
-        for (auto itr = 0; itr != abs(dy); itr++)
+        int nedges = abs(dx) + abs(dy);
+        int midpoint = nedges / 3;
+        printf("\nloop12 %d,%d %d,%d", p1.x, p1.y, p2.x, p2.y);
+        //          *p1
+        //
+        //
+        //   *p2
+        if (p1.x > p2.x && p1.y > p2.y)
         {
-          rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(0)] = (rst->nets[net_itr].pins[seg_itr].y + itr + 1) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
+          printf("\nloop6");
+          for (int itr = 0; itr < abs(dx); itr++)
+          {
+            if (itr < midpoint)
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+            }
+            else if (itr == midpoint)
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(0)] = (rst->nets[net_itr].pins[seg_itr].y + itr + 1) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
+            }
+            else
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+            }
+            // rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(y_diff)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+          }
         }
-        /*
-         Routing Horizontally towards right side
-        */
-        y = rst->nets[net_itr].pins[seg_itr].y + dy;
-        for (auto itr = 0; itr != abs(dx); itr++)
+
+        // *p2
+        //
+        //
+        //          *p1
+
+        if (p1.x > p2.x && p1.y < p2.y)
         {
-          rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+          printf("\nloop66");
+          for (int itr = 0; itr < abs(dx); itr++)
+          {
+            if (itr < midpoint)
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+            }
+            else if (itr == midpoint)
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(0)] = (rst->nets[net_itr].pins[seg_itr].y + itr + 1) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
+            }
+            else
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+            }
+            // rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(y_diff)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+          }
+        }
+        // *p1
+        //
+        //
+        //          *p2
+
+        if (p1.x < p2.x && p1.y > p2.y)
+        {
+          printf("\nloop666");
+          for (int itr = 0; itr < abs(dx); itr++)
+          {
+            if (itr < midpoint)
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+            }
+            else if (itr == midpoint)
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(0)] = (rst->nets[net_itr].pins[seg_itr].y + itr + 1) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
+            }
+            else
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+            }
+            // rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(y_diff)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+          }
+        }
+
+        if (p1.x < p2.x && p1.y < p2.y)
+        {
+          printf("\nloop6666");
+          for (int itr = 0; itr < abs(dx); itr++)
+          {
+            if (itr < midpoint)
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+            }
+            else if (itr == midpoint)
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(0)] = (rst->nets[net_itr].pins[seg_itr].y + itr + 1) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
+            }
+            else
+            {
+              rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+            }
+            // rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(y_diff)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+          }
         }
       }
     }
   }
-
   return 1;
 }
 
@@ -942,7 +1041,7 @@ iteration, for each net n, we calculate a cost
 4>For each net in the new order, we remove the existing route stored for the net by
 decreasing the edge utilizations corresponding to the route and then reroute to generate a better route (of lower cost) for the net
 
-   input: pointer to the routing instance, starttime
+   input: pointer to the routing instance, startTime
    output: 1 if successful, 0 otherwise
 */
 int rrr(routingInst *rst, timeval startTime)
@@ -1069,6 +1168,17 @@ int rrr(routingInst *rst, timeval startTime)
     printf("completed quicksorting the nets by their costs: %d\n", loop_var);
 
     /* Pattern Routing / A* */
+    int status = patternRouting(rst);
+    if (status == 0)
+    {
+      printf("ERROR: failed pattern Routing\n");
+      release(rst);
+      return 1;
+    }
+    else
+    {
+      printf("Successfully run pattern Routing! \n");
+    }
 
     /* TERMINATION CONDITION */
     // change value of terminate
@@ -1085,7 +1195,7 @@ int rrr(routingInst *rst, timeval startTime)
       terminate = false;
     }
 
-    if (loop_var == 100)
+    if (loop_var == 1000)
     {
       terminate = true;
     }
