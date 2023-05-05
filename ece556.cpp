@@ -500,8 +500,6 @@ int getEdgeID(routingInst *rst, int x1, int y1, int x2, int y2)
   return id;
 }
 
-
-
 void horizontal(routingInst *rst, int net_itr, int seg_itr, int dx, int dy)
 {
   int ptr, id;
@@ -542,7 +540,6 @@ void vertical(routingInst *rst, int net_itr, int seg_itr, int dx, int dy)
       id = getEdgeID(rst, rst->nets[net_itr].pins[seg_itr].x + dx, rst->nets[net_itr].pins[seg_itr].y + ptr, rst->nets[net_itr].pins[seg_itr].x + dx, rst->nets[net_itr].pins[seg_itr].y + ptr + 1);
       rst->nets[net_itr].nroute.segments[seg_itr].edges[ptr + abs(dx)] = id;
     }
-   
   }
   else
   {
@@ -612,7 +609,7 @@ int solveRouting(routingInst *rst)
   return 1;
 }
 
-
+/* DEFUNCT */
 int solveRouting2(routingInst *rst)
 {
   /*********** TO BE FILLED BY YOU **********/
@@ -771,6 +768,7 @@ int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
   return 1;
 }
 
+/* Routing based on Z and U shapes*/
 int patternRouting(routingInst *rst)
 {
   /*********** TO BE FILLED BY YOU **********/
