@@ -482,6 +482,102 @@ int solveRouting(routingInst *rst)
   /*********** TO BE FILLED BY YOU **********/
   int x, y;
   point p1, p2;
+  int dx, dy;
+  int x_diff_abs, y_diff_abs;
+
+  for (auto net_itr = 0; net_itr != rst->numNets; net_itr++)
+  {
+    /* Number of segments = Number of pins - 1 */
+    rst->nets[net_itr].nroute.numSegs = rst->nets[net_itr].numPins - 1;
+
+    rst->nets[net_itr].nroute.segments = (segment *)malloc(rst->nets[net_itr].nroute.numSegs * sizeof(segment));
+
+    /* Marking start-end pins and it's segments for different types of route
+    |                     --------                                   |
+    |                     |                                          |
+    |                     |                                          |
+    |________      or     |            OR     _________    OR        |
+    */
+
+    int pin_num = 0;
+    for (auto seg_itr = 0; seg_itr != rst->nets[net_itr].nroute.numSegs; seg_itr++)
+    {
+
+      // * so set starting and ending points from pins */
+      rst->nets[net_itr].nroute.segments[seg_itr].p1 = rst->nets[net_itr].pins[seg_itr];
+      rst->nets[net_itr].nroute.segments[seg_itr].p2 = rst->nets[net_itr].pins[seg_itr + 1];
+
+      /*route between pin[j] and pin [j+1] */
+      /* find delta x and delta y */
+      dx = rst->nets[net_itr].pins[seg_itr + 1].x - rst->nets[net_itr].pins[seg_itr].x;
+      dy = rst->nets[net_itr].pins[seg_itr + 1].y - rst->nets[net_itr].pins[seg_itr].y;
+
+      rst->nets[net_itr].nroute.segments[seg_itr].p1 = p1; /* start point of current segment */
+      rst->nets[net_itr].nroute.segments[seg_itr].p2 = p2; /* end point of current segment */
+
+      rst->nets[net_itr].nroute.segments[seg_itr].numEdges = abs(dx) + abs(dy); /* number of edges in the segment*/
+
+      rst->nets[net_itr].nroute.segments[seg_itr].edges =
+          (int *)malloc(rst->nets[net_itr].nroute.segments[seg_itr].numEdges * sizeof(int));
+      /*
+      For numbering the edge ids, we first number the horizontal edges from left to right starting from the bottom most one. We then number the vertical edges starting from the left most one then moving up.
+        ____e5_______e6__
+      e8|     e10|       |e12
+        |___e3___|___e4__|
+      e7|      e9|       |e11
+        |___e1___|___e2__|
+      */
+
+      if (p1.x > p2.x)
+      {
+        /*
+         Routing Horizontally towards left side
+        */
+        y = rst->nets[net_itr].pins[seg_itr].y;
+        for (auto itr = 0; itr != abs(dx); itr++)
+        {
+          rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x - itr) + y * (rst->gx - 1);
+        }
+        /*
+        Routing Vertically downwards
+        */
+
+        x = rst->nets[net_itr].pins[seg_itr].x + dx;
+        for (auto itr = 0; itr != abs(dy); itr++)
+        {
+          rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dx)] = (rst->nets[net_itr].pins[seg_itr].y - itr) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
+        }
+      }
+      else
+      {
+        /*
+       Routing Vertically upwards
+       */
+        x = rst->nets[net_itr].pins[seg_itr].x;
+        for (auto itr = 0; itr != abs(dy); itr++)
+        {
+          rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(0)] = (rst->nets[net_itr].pins[seg_itr].y + itr + 1) + (rst->gx - 1) * (rst->gy) + x * (rst->gy - 1);
+        }
+        /*
+         Routing Horizontally towards right side
+        */
+        y = rst->nets[net_itr].pins[seg_itr].y + dy;
+        for (auto itr = 0; itr != abs(dx); itr++)
+        {
+          rst->nets[net_itr].nroute.segments[seg_itr].edges[itr + abs(dy)] = (rst->nets[net_itr].pins[seg_itr].x + itr + 1) + y * (rst->gx - 1);
+        }
+      }
+    }
+  }
+
+  return 1;
+}
+
+int solveRouting2(routingInst *rst)
+{
+  /*********** TO BE FILLED BY YOU **********/
+  int x, y;
+  point p1, p2;
   int x_diff_abs, y_diff_abs;
 
   for (auto net_itr = 0; net_itr != rst->numNets; net_itr++)
@@ -595,15 +691,17 @@ int computeEdgeUtilizations(routingInst *rst)
 
   for (int net_id = 0; net_id < rst->numNets - 1; net_id++)
   {
+    
 
     for (int seg_id = 0; seg_id < rst->nets[net_id].nroute.numSegs - 1; seg_id++)
-    {
+    { 
 
       for (int edge_id = 0; edge_id < rst->nets[net_id].nroute.segments[seg_id].numEdges - 1; edge_id++)
       {
 
         int edge_in_question = rst->nets[net_id].nroute.segments[seg_id].edges[edge_id];
         // defaulted to zero, so just incremenent whenever there's a match
+       // printf("\n\n\nrvewvefbv");
         rst->edgeUtils[edge_in_question - 1]++;
       }
     }
@@ -618,6 +716,8 @@ this formula:
 */
 int computeEdgeWeights(routingInst *rst, edge_params *edge_params_)
 {
+
+
 
   for (int edge_id = 0; edge_id < rst->numEdges; edge_id++)
   {
